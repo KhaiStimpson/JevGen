@@ -35,28 +35,43 @@
     This is what makes `dotnet add package JevGen` enough: NuGet applies everything under
     analyzers/dotnet/cs to the consuming project, so the generator, the analyzers and the code
     fixes all arrive with the one package. Without it the package installs cleanly and silently
-    generates nothing, which is the worst possible failure mode, so the target below fails the
-    pack rather than letting a broken package out.
+    generates nothing, which is the worst possible failure mode.
 
-    The wildcards make these globs, which match nothing when the extensions were not built (as
-    with SkipJevGenAnalyzers) instead of failing on a missing literal path.
+    The items are built inside a target rather than in a plain ItemGroup because a top-level
+    ItemGroup is resolved during project evaluation, which happens before the referenced
+    extension projects have been built. On a clean tree their output does not exist yet, so the
+    paths would resolve to nothing and the package would ship without them.
+    TargetsForTfmSpecificContentInPackage runs during pack, after those references are built,
+    so the paths resolve correctly whether or not the tree was built beforehand.
   -->
-  <ItemGroup Condition="'$(SkipJevGenAnalyzers)' != 'true'">
-    <None Include="$(MSBuildThisFileDirectory)../JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator*.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(MSBuildThisFileDirectory)../JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers*.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(MSBuildThisFileDirectory)../JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes*.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(SkipJevGenAnalyzers)' != 'true'">
+    <TargetsForTfmSpecificContentInPackage>
+      $(TargetsForTfmSpecificContentInPackage);AddJevGenAnalyzerAssets
+    </TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
 
-  <Target Name="VerifyJevGenAnalyzerAssets" BeforeTargets="GenerateNuspec" Condition="'$(SkipJevGenAnalyzers)' != 'true'">
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator.dll')"
-           Text="The JevGen source generator was not found, so the package would ship without it and silently generate nothing. Build JevGen.Generator in the $(Configuration) configuration first." />
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll')"
-           Text="The JevGen analyzers were not found, so the package would ship without them. Build JevGen.Analyzers in the $(Configuration) configuration first." />
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll')"
-           Text="The JevGen code fixes were not found, so the package would ship without them. Build JevGen.CodeFixes in the $(Configuration) configuration first." />
+  <Target Name="AddJevGenAnalyzerAssets" DependsOnTargets="ResolveProjectReferences">
+    <PropertyGroup>
+      <_JevGenExtensionRoot>$(MSBuildThisFileDirectory)..</_JevGenExtensionRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator.dll" />
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll" />
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll" />
+    </ItemGroup>
+
+    <!--
+      Fail the pack rather than publish a package that installs cleanly and does nothing.
+      Checked here, in the same target that collects them, so the check cannot pass while the
+      collection silently found nothing.
+    -->
+    <Error Condition="!Exists('%(_JevGenExtension.FullPath)')"
+           Text="The compiler extension '%(_JevGenExtension.Filename)%(_JevGenExtension.Extension)' was not found at %(_JevGenExtension.FullPath), so the package would ship without it and silently generate nothing for consumers." />
+
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_JevGenExtension)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
   </Target>
 
 </Project>
