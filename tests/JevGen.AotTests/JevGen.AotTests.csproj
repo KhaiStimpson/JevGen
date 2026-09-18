@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.AotTests</RootNamespace>
+    <IsPackable>false</IsPackable>
+
+    <!-- Native AOT is a first-class requirement, so this project is published as a native
+         binary in CI and the binary is executed. A framework-dependent test would not prove
+         anything: the failures worth catching are trim warnings and reflection at run time. -->
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+
+    <!-- Any trim or AOT warning fails the build. This is the whole point of the project. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/JevGen.Policies/JevGen.Policies.csproj" />
+    <ProjectReference Include="../../src/JevGen.Providers.TypeSafe/JevGen.Providers.TypeSafe.csproj" />
+  </ItemGroup>
+
+</Project>

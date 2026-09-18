@@ -25,6 +25,7 @@
     <Project Path="src/JevGen/JevGen.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/JevGen.AotTests/JevGen.AotTests.csproj" />
     <Project Path="tests/JevGen.Generator.Tests/JevGen.Generator.Tests.csproj" />
     <Project Path="tests/JevGen.IntegrationTests/JevGen.IntegrationTests.csproj" />
     <Project Path="tests/JevGen.Runtime.Tests/JevGen.Runtime.Tests.csproj" />

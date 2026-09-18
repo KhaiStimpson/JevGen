@@ -10,6 +10,10 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
+    <!-- A compiler extension is never AOT-published; keep a solution-wide -p:PublishAot=true
+         from trying to compile this netstandard2.0 assembly natively. -->
+    <PublishAot>false</PublishAot>
+    <IsAotCompatible>false</IsAotCompatible>
     <Description>The JevGen Roslyn incremental source generator.</Description>
   </PropertyGroup>
 
