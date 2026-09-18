@@ -3,6 +3,13 @@
   <!--
     Attaching the JevGen source generator to projects that consume JevGen by project reference.
 
+    Note the absence of SetTargetFramework on these references. Passing it gives the reference a
+    different set of global properties, which makes MSBuild treat it as a separate instance of
+    the same project and build it a second time into the same output directory. With a parallel
+    build the two instances race on .deps.json and one of them fails with an IOException. These
+    projects are single-targeted netstandard2.0, so ordinary target-framework negotiation
+    resolves them correctly on its own.
+
     When JevGen is consumed as a NuGet package, the generator and analyzers flow automatically:
     they are packed into analyzers/dotnet/cs and NuGet applies them to the consuming project.
     Analyzer assets do NOT flow the same way through a ProjectReference chain, so inside this
@@ -21,18 +28,15 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Generator/JevGen.Generator.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
-                      PrivateAssets="all"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      PrivateAssets="all" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Analyzers/JevGen.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
-                      PrivateAssets="all"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      PrivateAssets="all" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.CodeFixes/JevGen.CodeFixes.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
-                      PrivateAssets="all"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      PrivateAssets="all" />
   </ItemGroup>
 
   <!--

@@ -18,18 +18,15 @@
     <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Generator/JevGen.Generator.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
-                      OutputItemType="Analyzer"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      OutputItemType="Analyzer" />
     <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Analyzers/JevGen.Analyzers.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
-                      OutputItemType="Analyzer"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      OutputItemType="Analyzer" />
     <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.CodeFixes/JevGen.CodeFixes.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
-                      OutputItemType="Analyzer"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      OutputItemType="Analyzer" />
   </ItemGroup>
 
   <!--
