@@ -1,5 +1,8 @@
 # JevGen
 
+[![NuGet](https://img.shields.io/nuget/vpre/JevGen.svg?logo=nuget&label=nuget)](https://www.nuget.org/packages/JevGen)
+[![CI](https://github.com/KhaiStimpson/JevGen/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaiStimpson/JevGen/actions/workflows/ci.yml)
+
 **Refit for typed AI decisions.**
 
 JevGen turns an ordinary C# interface into a strongly typed AI decision client at compile time.
@@ -72,9 +75,13 @@ to say so explicitly with `AllowPrimitiveResult`.
 ## Installation
 
 ```bash
-dotnet add package JevGen
-dotnet add package JevGen.Providers.TypeSafe   # or JevGen.Providers.OpenRouter
+dotnet add package JevGen --prerelease
+dotnet add package JevGen.Providers.TypeSafe --prerelease   # or JevGen.Providers.OpenRouter
 ```
+
+`--prerelease` is required: the current release is `1.0.0-preview.1`, and NuGet ignores
+prerelease versions unless you ask for them. Pin the version instead if you prefer:
+`--version 1.0.0-preview.1`.
 
 The source generator and analyzers flow with `JevGen` as analyzer assets; there is nothing else
 to install.
@@ -203,7 +210,7 @@ Requires the .NET 10 SDK.
 
 ## Status
 
-Pre-1.0. The public API may still change; see
+Pre-1.0, published on nuget.org as `1.0.0-preview.1`. The public API may still change; see
 [docs/architecture.md](docs/architecture.md#breaking-change-strategy) for the versioning policy.
 
 ## Licence
