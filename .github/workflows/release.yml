@@ -1,0 +1,119 @@
+name: Release
+
+# Publishing to nuget.org cannot be undone: a version can be unlisted but never deleted, and the
+# ID is burned either way. So the tag only starts the run -- the packages still have to build,
+# pass the tests and survive the consumer verification before anything is pushed, and the push
+# itself waits on the "nuget" environment. The credential is minted per run by trusted
+# publishing, so no long-lived nuget.org key exists to be stolen.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version to build, without a leading v (e.g. 1.0.0-preview.1)"
+        required: true
+      publish:
+        description: "Push to nuget.org. Leave off for a dry run that packs and verifies only."
+        type: boolean
+        default: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Pack and publish
+    runs-on: ubuntu-latest
+    environment: nuget
+
+    # id-token lets the job request the GitHub OIDC token that nuget.org exchanges for a
+    # short-lived key. Without it the request fails quietly and the login step yields nothing.
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # A tag is the only thing that names the version, so it is parsed once here and every later
+      # step uses the result. Rejecting a malformed tag now is cheaper than discovering it in the
+      # package id.
+      - name: Resolve the version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$version' is not a valid semantic version. Tag as v1.2.3 or v1.2.3-preview.1."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version"
+
+      - run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release -p:Version=${{ steps.version.outputs.version }}
+
+      # CI already ran on the commit, but a bad push here is permanent, so the suite runs again
+      # against the exact tree and version being shipped.
+      - name: Test
+        run: dotnet test --no-build -c Release -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Pack
+        run: dotnet pack -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+
+      # The same consumer check CI runs: proves the packages carry the compiler extensions and
+      # that a real project builds and generates against them.
+      - name: Verify the packages
+        env:
+          JEVGEN_VERSION: ${{ steps.version.outputs.version }}
+        run: ./eng/verify-packages.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+
+      # Trusted publishing: nuget.org verifies the OIDC token's claims against its policy for this
+      # repository and workflow, then issues a key that expires in about an hour. There is no
+      # long-lived secret to leak, and a key stolen from a run is near worthless. It is requested
+      # here rather than earlier so as little of that hour as possible is spent building.
+      - name: Exchange the OIDC token for a NuGet key
+        id: login
+        if: github.event_name == 'push' || inputs.publish
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # Each .snupkg is pushed automatically with the .nupkg beside it, so only the .nupkg glob is
+      # listed. --skip-duplicate lets a partial push be re-run without failing on what landed.
+      - name: Push to nuget.org
+        if: github.event_name == 'push' || inputs.publish
+        run: |
+          dotnet nuget push "artifacts/*.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --skip-duplicate
+
+      - name: Report a dry run
+        if: github.event_name != 'push' && !inputs.publish
+        run: |
+          echo "::notice::Dry run: ${{ steps.version.outputs.version }} packed and verified, nothing pushed."
