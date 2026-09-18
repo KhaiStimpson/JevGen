@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Providers</RootNamespace>
+    <Description>The stable service-provider interface for JevGen evaluation providers. Implement IJevProvider to host Jev contracts on any backend without touching the source generator.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Abstractions/JevGen.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

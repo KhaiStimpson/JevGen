@@ -1,0 +1,58 @@
+<Project>
+
+  <!--
+    Attaching the JevGen source generator to projects that consume JevGen by project reference.
+
+    Note the absence of SetTargetFramework on these references. Passing it gives the reference a
+    different set of global properties, which makes MSBuild treat it as a separate instance of
+    the same project and build it a second time into the same output directory. With a parallel
+    build the two instances race on .deps.json and one of them fails with an IOException. These
+    projects are single-targeted netstandard2.0, so ordinary target-framework negotiation
+    resolves them correctly on its own.
+
+    When JevGen is consumed as a NuGet package, the generator and analyzers flow automatically:
+    they are packed into analyzers/dotnet/cs and NuGet applies them to the consuming project.
+    Analyzer assets do NOT flow the same way through a ProjectReference chain, so inside this
+    repository every sample and test that declares a [JevClient] contract has to attach them
+    explicitly. Without this, those projects would compile cleanly and silently produce no
+    client at all.
+  -->
+
+  <PropertyGroup Condition="'$(AttachJevGenAnalyzers)' == ''">
+    <AttachJevGenAnalyzers Condition="$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)samples$([System.IO.Path]::DirectorySeparatorChar)'))">true</AttachJevGenAnalyzers>
+    <AttachJevGenAnalyzers Condition="$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)tests$([System.IO.Path]::DirectorySeparatorChar)'))">true</AttachJevGenAnalyzers>
+    <AttachJevGenAnalyzers Condition="'$(AttachJevGenAnalyzers)' == ''">false</AttachJevGenAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(AttachJevGenAnalyzers)' == 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Generator/JevGen.Generator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Analyzers/JevGen.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.CodeFixes/JevGen.CodeFixes.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <!--
+    Trim and AOT analysis for the shippable libraries.
+
+    This lives in .targets rather than .props because the conditions depend on TargetFramework,
+    which a project sets in its own body: a .props file is imported before that and would see it
+    empty. The netstandard2.0 compiler extensions are excluded, since the analyzers do not apply
+    to that target framework.
+  -->
+  <PropertyGroup Condition="'$(IsShippingLibrary)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsTrimmable Condition="'$(IsTrimmable)' == ''">true</IsTrimmable>
+    <IsAotCompatible Condition="'$(IsAotCompatible)' == ''">true</IsAotCompatible>
+    <EnableTrimAnalyzer Condition="'$(EnableTrimAnalyzer)' == ''">true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer Condition="'$(EnableAotAnalyzer)' == ''">true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer Condition="'$(EnableSingleFileAnalyzer)' == ''">true</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+
+</Project>

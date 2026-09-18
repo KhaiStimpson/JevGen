@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Testing</RootNamespace>
+    <Description>Deterministic testing support for JevGen contracts: scripted answers, fixture replay, recording and failure simulation, without a network or a model.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+  </ItemGroup>
+
+</Project>

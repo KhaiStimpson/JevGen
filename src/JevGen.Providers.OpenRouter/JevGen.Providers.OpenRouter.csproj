@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Providers.OpenRouter</RootNamespace>
+    <Description>First-party JevGen provider for Jev hosted through OpenRouter.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Jev/JevGen.Jev.csproj" />
+    <ProjectReference Include="../JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>

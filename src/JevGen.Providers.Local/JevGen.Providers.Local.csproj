@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Providers.Local</RootNamespace>
+    <Description>JevGen provider for a self-hosted, Jev-compatible endpoint such as an internal gateway or a locally served model.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Jev/JevGen.Jev.csproj" />
+    <ProjectReference Include="../JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>

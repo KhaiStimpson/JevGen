@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Providers.Anthropic</RootNamespace>
+    <Description>JevGen provider that runs evaluation contracts on Anthropic models through structured output. Approximates Jev semantics; it is not a substitute for a calibrated evaluation model.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../JevGen.Providers.Chat/JevGen.Providers.Chat.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+</Project>

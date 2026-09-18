@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen</RootNamespace>
+    <Description>Refit-style, source-generated, strongly typed AI decision clients for .NET. This is the package consumers install; the source generator and analyzers flow with it.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Abstractions/JevGen.Abstractions.csproj" />
+    <ProjectReference Include="../JevGen.Providers.Abstractions/JevGen.Providers.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- Ship the generator and analyzers as analyzer assets so consumers only install JevGen. -->
+  <ItemGroup>
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Generator/JevGen.Generator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Analyzers/JevGen.Analyzers.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.CodeFixes/JevGen.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!--
+    Pack the compiler extensions as analyzer assets.
+
+    This is what makes `dotnet add package JevGen` enough: NuGet applies everything under
+    analyzers/dotnet/cs to the consuming project, so the generator, the analyzers and the code
+    fixes all arrive with the one package. Without it the package installs cleanly and silently
+    generates nothing, which is the worst possible failure mode.
+
+    The items are built inside a target rather than in a plain ItemGroup because a top-level
+    ItemGroup is resolved during project evaluation, which happens before the referenced
+    extension projects have been built. On a clean tree their output does not exist yet, so the
+    paths would resolve to nothing and the package would ship without them.
+    TargetsForTfmSpecificContentInPackage runs during pack, after those references are built,
+    so the paths resolve correctly whether or not the tree was built beforehand.
+  -->
+  <PropertyGroup Condition="'$(SkipJevGenAnalyzers)' != 'true'">
+    <TargetsForTfmSpecificContentInPackage>
+      $(TargetsForTfmSpecificContentInPackage);AddJevGenAnalyzerAssets
+    </TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="AddJevGenAnalyzerAssets" DependsOnTargets="ResolveProjectReferences">
+    <PropertyGroup>
+      <_JevGenExtensionRoot>$(MSBuildThisFileDirectory)..</_JevGenExtensionRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator.dll" />
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll" />
+      <_JevGenExtension Include="$(_JevGenExtensionRoot)/JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll" />
+    </ItemGroup>
+
+    <!--
+      Fail the pack rather than publish a package that installs cleanly and does nothing.
+      Checked here, in the same target that collects them, so the check cannot pass while the
+      collection silently found nothing.
+    -->
+    <Error Condition="!Exists('%(_JevGenExtension.FullPath)')"
+           Text="The compiler extension '%(_JevGenExtension.Filename)%(_JevGenExtension.Extension)' was not found at %(_JevGenExtension.FullPath), so the package would ship without it and silently generate nothing for consumers." />
+
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_JevGenExtension)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>

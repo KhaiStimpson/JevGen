@@ -1,0 +1,40 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/AgentToolRouting/AgentToolRouting.csproj" />
+    <Project Path="samples/AspNetCore/AspNetCore.csproj" />
+    <Project Path="samples/ContentModeration/ContentModeration.csproj" />
+    <Project Path="samples/FraudDetection/FraudDetection.csproj" />
+    <Project Path="samples/NativeAot/NativeAot.csproj" />
+    <Project Path="samples/TicketRouting/TicketRouting.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/JevGen.Abstractions/JevGen.Abstractions.csproj" />
+    <Project Path="src/JevGen.Analyzers/JevGen.Analyzers.csproj" />
+    <Project Path="src/JevGen.AspNetCore/JevGen.AspNetCore.csproj" />
+    <Project Path="src/JevGen.Cli/JevGen.Cli.csproj" />
+    <Project Path="src/JevGen.CodeFixes/JevGen.CodeFixes.csproj" />
+    <Project Path="src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <Project Path="src/JevGen.Extensions.AI/JevGen.Extensions.AI.csproj" />
+    <Project Path="src/JevGen.Generator/JevGen.Generator.csproj" />
+    <Project Path="src/JevGen.Jev/JevGen.Jev.csproj" />
+    <Project Path="src/JevGen.OpenTelemetry/JevGen.OpenTelemetry.csproj" />
+    <Project Path="src/JevGen.Policies/JevGen.Policies.csproj" />
+    <Project Path="src/JevGen.Providers.Abstractions/JevGen.Providers.Abstractions.csproj" />
+    <Project Path="src/JevGen.Providers.Anthropic/JevGen.Providers.Anthropic.csproj" />
+    <Project Path="src/JevGen.Providers.Chat/JevGen.Providers.Chat.csproj" />
+    <Project Path="src/JevGen.Providers.Gemini/JevGen.Providers.Gemini.csproj" />
+    <Project Path="src/JevGen.Providers.Local/JevGen.Providers.Local.csproj" />
+    <Project Path="src/JevGen.Providers.OpenAI/JevGen.Providers.OpenAI.csproj" />
+    <Project Path="src/JevGen.Providers.OpenRouter/JevGen.Providers.OpenRouter.csproj" />
+    <Project Path="src/JevGen.Providers.TypeSafe/JevGen.Providers.TypeSafe.csproj" />
+    <Project Path="src/JevGen.Testing/JevGen.Testing.csproj" />
+    <Project Path="src/JevGen/JevGen.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JevGen.AotTests/JevGen.AotTests.csproj" />
+    <Project Path="tests/JevGen.Generator.Tests/JevGen.Generator.Tests.csproj" />
+    <Project Path="tests/JevGen.IntegrationTests/JevGen.IntegrationTests.csproj" />
+    <Project Path="tests/JevGen.Runtime.Tests/JevGen.Runtime.Tests.csproj" />
+    <Project Path="tests/JevGen.Testing.Tests/JevGen.Testing.Tests.csproj" />
+  </Folder>
+</Solution>

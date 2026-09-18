@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Policies</RootNamespace>
+    <Description>Decision policies for JevGen: classify a model result by confidence into accept, review or reject. Policies classify; they never execute business side effects.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Abstractions/JevGen.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
