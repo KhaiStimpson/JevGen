@@ -15,7 +15,10 @@ namespace JevGen;
 public static class JevProviderServiceCollectionExtensions
 {
     /// <summary>Registers a provider resolved from the container.</summary>
-    public static IServiceCollection AddJevProvider<TProvider>(this IServiceCollection services)
+    public static IServiceCollection AddJevProvider<
+        [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TProvider>(
+        this IServiceCollection services)
         where TProvider : class, IJevProvider
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -26,7 +29,10 @@ public static class JevProviderServiceCollectionExtensions
     }
 
     /// <summary>Registers a provider and configures its options.</summary>
-    public static IServiceCollection AddJevProvider<TProvider, TOptions>(
+    public static IServiceCollection AddJevProvider<
+        [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TProvider,
+        TOptions>(
         this IServiceCollection services,
         Action<TOptions> configure)
         where TProvider : class, IJevProvider
@@ -64,7 +70,11 @@ public static class JevProviderServiceCollectionExtensions
     }
 
     /// <summary>Registers a provider type under an explicit name.</summary>
-    public static IServiceCollection AddJevProvider<TProvider>(this IServiceCollection services, string name)
+    public static IServiceCollection AddJevProvider<
+        [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TProvider>(
+        this IServiceCollection services,
+        string name)
         where TProvider : class, IJevProvider
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -82,25 +92,4 @@ public static class JevProviderServiceCollectionExtensions
         services.Configure<JevGenOptions>(options => options.DefaultProvider = name);
         return services;
     }
-}
-
-/// <summary>
-/// Presents a provider under a different registered name, so the same implementation can be
-/// registered more than once with different configuration.
-/// </summary>
-internal sealed class NamedJevProvider(string name, IJevProvider inner) : IJevProvider, IJevProviderHealth
-{
-    public string Name { get; } = name;
-
-    public JevProviderCapabilities Capabilities => inner.Capabilities;
-
-    public ValueTask<JevProviderResponse> EvaluateAsync(
-        JevProviderRequest request,
-        CancellationToken cancellationToken = default)
-        => inner.EvaluateAsync(request, cancellationToken);
-
-    public ValueTask<JevProviderHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default)
-        => inner is IJevProviderHealth health
-            ? health.CheckHealthAsync(cancellationToken)
-            : new ValueTask<JevProviderHealthResult>(JevProviderHealthResult.Healthy("No health probe is implemented."));
 }

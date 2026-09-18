@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen.Extensions.AI</RootNamespace>
     <Description>Integrates JevGen's typed decisions with Microsoft.Extensions.AI: tool routing, guardrails, model routing and confidence gates for agentic applications.</Description>

@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen.Providers.OpenRouter</RootNamespace>
     <Description>First-party JevGen provider for Jev hosted through OpenRouter.</Description>

@@ -239,9 +239,7 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
 
         // Selection precedence: explicit programmatic client configuration, then the method or
         // contract attribute carried on the request, then the global default.
-        var primaryName = clientConfiguration?.Provider ?? request.Provider ?? options.DefaultProvider;
-
-        var primary = primaryName is not null ? _providers.Resolve(primaryName) : _providers.Default;
+        var primary = ResolvePrimary(request, options, clientConfiguration);
 
         if (primary is not null)
         {
@@ -252,17 +250,49 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
         {
             foreach (var fallback in clientConfiguration.FallbackProviders)
             {
-                var provider = _providers.Resolve(fallback);
+                Add(candidates, _providers.Resolve(fallback));
+            }
 
-                if (!candidates.Contains(provider))
-                {
-                    candidates.Add(provider);
-                }
+            foreach (var fallbackType in clientConfiguration.FallbackProviderTypes)
+            {
+                Add(candidates, ResolveByType(fallbackType));
             }
         }
 
         return candidates;
     }
+
+    private static void Add(List<IJevProvider> candidates, IJevProvider provider)
+    {
+        if (!candidates.Contains(provider))
+        {
+            candidates.Add(provider);
+        }
+    }
+
+    private IJevProvider? ResolvePrimary(
+        EvaluationRequest request,
+        JevGenOptions options,
+        JevClientConfiguration? clientConfiguration)
+    {
+        // Programmatic selection by type wins, then by name, then the attribute carried on the
+        // request, then the global default, then whatever was registered first.
+        if (clientConfiguration?.ProviderType is { } providerType)
+        {
+            return ResolveByType(providerType);
+        }
+
+        var name = clientConfiguration?.Provider ?? request.Provider ?? options.DefaultProvider;
+
+        return name is not null ? _providers.Resolve(name) : _providers.Default;
+    }
+
+    private IJevProvider ResolveByType(Type providerType)
+        => JevProviderNames.TryResolve(providerType, _providers, out var provider)
+            ? provider
+            : throw new JevGenException(
+                $"No JevGen provider of type '{providerType}' is registered. Register it with " +
+                $"AddJevProvider<{providerType.Name}>() before selecting it.");
 
     private static JevClientConfiguration? FindClientConfiguration(JevGenOptions options, string clientName)
     {

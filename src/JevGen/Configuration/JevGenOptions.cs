@@ -78,6 +78,16 @@ public sealed class JevClientConfiguration
     /// <summary>The registered provider name this contract should use.</summary>
     public string? Provider { get; set; }
 
+    /// <summary>
+    /// The provider implementation type this contract should use, when it was selected by type
+    /// rather than by name.
+    /// </summary>
+    /// <remarks>
+    /// The name is resolved from the registered instance when the container is available, so
+    /// selection never depends on reading a name reflectively.
+    /// </remarks>
+    public Type? ProviderType { get; set; }
+
     /// <summary>The model this contract should use.</summary>
     public string? Model { get; set; }
 
@@ -85,6 +95,9 @@ public sealed class JevClientConfiguration
     /// Providers to try, in order, when the primary provider cannot serve the request.
     /// </summary>
     public IList<string> FallbackProviders { get; } = [];
+
+    /// <summary>Fallback providers selected by implementation type rather than by name.</summary>
+    public IList<Type> FallbackProviderTypes { get; } = [];
 
     /// <summary>
     /// When set, a result whose lowest confidence falls below this threshold causes the next

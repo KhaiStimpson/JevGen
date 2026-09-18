@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen</RootNamespace>
     <Description>Refit-style, source-generated, strongly typed AI decision clients for .NET. This is the package consumers install; the source generator and analyzers flow with it.</Description>
@@ -33,13 +32,34 @@
                       SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="$(OutputPath)/../../../JevGen.Generator/$(Configuration)/netstandard2.0/JevGen.Generator.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Generator/$(Configuration)/netstandard2.0/JevGen.Generator.dll')" />
-    <None Include="$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll')" />
-    <None Include="$(OutputPath)/../../../JevGen.CodeFixes/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll"
-          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.CodeFixes/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll')" />
+  <!--
+    Pack the compiler extensions as analyzer assets.
+
+    This is what makes `dotnet add package JevGen` enough: NuGet applies everything under
+    analyzers/dotnet/cs to the consuming project, so the generator, the analyzers and the code
+    fixes all arrive with the one package. Without it the package installs cleanly and silently
+    generates nothing, which is the worst possible failure mode, so the target below fails the
+    pack rather than letting a broken package out.
+
+    The wildcards make these globs, which match nothing when the extensions were not built (as
+    with SkipJevGenAnalyzers) instead of failing on a missing literal path.
+  -->
+  <ItemGroup Condition="'$(SkipJevGenAnalyzers)' != 'true'">
+    <None Include="$(MSBuildThisFileDirectory)../JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator*.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers*.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes*.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
+
+  <Target Name="VerifyJevGenAnalyzerAssets" BeforeTargets="GenerateNuspec" Condition="'$(SkipJevGenAnalyzers)' != 'true'">
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.Generator/bin/$(Configuration)/netstandard2.0/JevGen.Generator.dll')"
+           Text="The JevGen source generator was not found, so the package would ship without it and silently generate nothing. Build JevGen.Generator in the $(Configuration) configuration first." />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.Analyzers/bin/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll')"
+           Text="The JevGen analyzers were not found, so the package would ship without them. Build JevGen.Analyzers in the $(Configuration) configuration first." />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../JevGen.CodeFixes/bin/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll')"
+           Text="The JevGen code fixes were not found, so the package would ship without them. Build JevGen.CodeFixes in the $(Configuration) configuration first." />
+  </Target>
 
 </Project>

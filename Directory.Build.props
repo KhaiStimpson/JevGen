@@ -31,19 +31,31 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
-  <!-- Library defaults: shippable packages under src/ -->
-  <PropertyGroup Condition="'$(IsShippingLibrary)' == 'true'">
-    <TargetFramework Condition="'$(TargetFramework)' == '' and '$(TargetFrameworks)' == ''">net10.0</TargetFramework>
+  <!--
+    Library defaults for everything under src/.
+
+    The condition tests the project's directory rather than a property, because this file is
+    imported before the project body runs: a property the csproj sets later is still empty here.
+    Projects that are not shippable libraries (the generator, the analyzers, the code fixes)
+    override IsPackable in their own file, which wins because the project body is evaluated after
+    this import.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)src$([System.IO.Path]::DirectorySeparatorChar)'))">
+    <IsShippingLibrary>true</IsShippingLibrary>
     <IsPackable>true</IsPackable>
-    <IsTrimmable>true</IsTrimmable>
-    <IsAotCompatible>true</IsAotCompatible>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <EnableAotAnalyzer>true</EnableAotAnalyzer>
-    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsShippingLibrary)' != 'true'">
+  <PropertyGroup Condition="!$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)src$([System.IO.Path]::DirectorySeparatorChar)'))">
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <!-- Every package carries the README, so it renders on nuget.org. -->
+  <PropertyGroup>
+    <PackageReadmeFile Condition="'$(IsPackable)' == 'true'">README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
 
 </Project>

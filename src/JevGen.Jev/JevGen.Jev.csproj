@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen.Jev</RootNamespace>
     <Description>The Jev wire protocol shared by JevGen's first-party providers: request construction, response parsing, model aliases and error mapping.</Description>

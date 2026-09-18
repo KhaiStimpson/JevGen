@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen.Providers.OpenAI</RootNamespace>
     <Description>JevGen provider that runs evaluation contracts on OpenAI models through structured output. Approximates Jev semantics; it is not a substitute for a calibrated evaluation model.</Description>

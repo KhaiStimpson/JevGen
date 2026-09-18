@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsShippingLibrary>true</IsShippingLibrary>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>JevGen.Providers.Chat</RootNamespace>
     <Description>Shared translation for running JevGen evaluation contracts on general-purpose chat models through structured output. Used by the OpenAI, Anthropic and Gemini providers.</Description>

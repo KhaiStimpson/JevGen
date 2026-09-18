@@ -40,6 +40,15 @@ public static class JevGenServiceCollectionExtensions
     }
 
     /// <summary>Binds <see cref="JevGenOptions"/> from configuration.</summary>
+    /// <remarks>
+    /// Configuration binding walks the options type reflectively. Trimmed and Native AOT
+    /// applications should configure JevGen with the delegate overload, or use the configuration
+    /// binding source generator.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
+        "Binding JevGenOptions from configuration uses reflection over its members. Use the Action<JevGenOptions> overload in a trimmed application.")]
+    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode(
+        "Binding JevGenOptions from configuration may require dynamic code. Use the Action<JevGenOptions> overload in a Native AOT application.")]
     public static JevGenBuilder AddJevGen(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -110,7 +119,10 @@ public static class JevGenServiceCollectionExtensions
     }
 
     /// <summary>Adds an evaluation filter to the runtime pipeline.</summary>
-    public static JevGenBuilder AddEvaluationFilter<TFilter>(this JevGenBuilder builder)
+    public static JevGenBuilder AddEvaluationFilter<
+        [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>(
+        this JevGenBuilder builder)
         where TFilter : class, IEvaluationFilter
     {
         ArgumentNullException.ThrowIfNull(builder);

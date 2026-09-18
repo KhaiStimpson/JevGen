@@ -31,6 +31,15 @@ public static class AnthropicServiceCollectionExtensions
     }
 
     /// <summary>Adds the Anthropic evaluation provider, bound from configuration.</summary>
+    /// <remarks>
+    /// Configuration binding walks the options type reflectively. Trimmed and Native AOT
+    /// applications should use the delegate overload, or the configuration binding source
+    /// generator.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
+        "Binding provider options from configuration uses reflection over their members. Use the delegate overload in a trimmed application.")]
+    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode(
+        "Binding provider options from configuration may require dynamic code. Use the delegate overload in a Native AOT application.")]
     public static IServiceCollection AddAnthropicEvaluation(
         this IServiceCollection services,
         IConfiguration configuration)

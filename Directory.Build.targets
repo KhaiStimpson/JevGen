@@ -35,4 +35,20 @@
                       SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
+  <!--
+    Trim and AOT analysis for the shippable libraries.
+
+    This lives in .targets rather than .props because the conditions depend on TargetFramework,
+    which a project sets in its own body: a .props file is imported before that and would see it
+    empty. The netstandard2.0 compiler extensions are excluded, since the analyzers do not apply
+    to that target framework.
+  -->
+  <PropertyGroup Condition="'$(IsShippingLibrary)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsTrimmable Condition="'$(IsTrimmable)' == ''">true</IsTrimmable>
+    <IsAotCompatible Condition="'$(IsAotCompatible)' == ''">true</IsAotCompatible>
+    <EnableTrimAnalyzer Condition="'$(EnableTrimAnalyzer)' == ''">true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer Condition="'$(EnableAotAnalyzer)' == ''">true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer Condition="'$(EnableSingleFileAnalyzer)' == ''">true</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+
 </Project>

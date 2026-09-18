@@ -40,9 +40,13 @@ public sealed class JevClientBuilder<TContract>
     }
 
     /// <summary>Routes this contract to a registered provider by type.</summary>
+    /// <remarks>
+    /// The provider's name is read from the registered instance once the container is built,
+    /// which keeps selection accurate and free of reflection.
+    /// </remarks>
     public JevClientBuilder<TContract> UseProvider<TProvider>()
         where TProvider : class, Providers.IJevProvider
-        => UseProvider(JevProviderNames.Of<TProvider>());
+        => Configure(configuration => configuration.ProviderType = typeof(TProvider));
 
     /// <summary>Overrides the model this contract uses.</summary>
     public JevClientBuilder<TContract> UseModel(string model)
@@ -69,7 +73,7 @@ public sealed class JevClientBuilder<TContract>
     /// <summary>Adds a provider to try when the primary provider cannot serve the request.</summary>
     public JevClientBuilder<TContract> FallbackTo<TProvider>()
         where TProvider : class, Providers.IJevProvider
-        => FallbackTo(JevProviderNames.Of<TProvider>());
+        => Configure(configuration => configuration.FallbackProviderTypes.Add(typeof(TProvider)));
 
     /// <summary>
     /// Falls back to the next provider when the primary answers below this confidence.

@@ -16,6 +16,12 @@
     <Description>Command-line tooling for JevGen: inspect generated contracts, validate them against a provider, and check an environment.</Description>
 
     <PublishAot>false</PublishAot>
+    <!-- The tool's whole job is to load assemblies it knows nothing about, so trim analysis has
+         nothing useful to say here. It is shipped as a framework-dependent dotnet tool. -->
+    <IsTrimmable>false</IsTrimmable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
