@@ -3,7 +3,8 @@ name: Release
 # Publishing to nuget.org cannot be undone: a version can be unlisted but never deleted, and the
 # ID is burned either way. So the tag only starts the run -- the packages still have to build,
 # pass the tests and survive the consumer verification before anything is pushed, and the push
-# itself waits on the "nuget" environment.
+# itself waits on the "nuget" environment. The credential is minted per run by trusted
+# publishing, so no long-lived nuget.org key exists to be stolen.
 on:
   push:
     tags: ["v*"]
@@ -22,11 +23,20 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
+permissions:
+  contents: read
+
 jobs:
   release:
     name: Pack and publish
     runs-on: ubuntu-latest
     environment: nuget
+
+    # id-token lets the job request the GitHub OIDC token that nuget.org exchanges for a
+    # short-lived key. Without it the request fails quietly and the login step yields nothing.
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -82,6 +92,17 @@ jobs:
             artifacts/*.nupkg
             artifacts/*.snupkg
 
+      # Trusted publishing: nuget.org verifies the OIDC token's claims against its policy for this
+      # repository and workflow, then issues a key that expires in about an hour. There is no
+      # long-lived secret to leak, and a key stolen from a run is near worthless. It is requested
+      # here rather than earlier so as little of that hour as possible is spent building.
+      - name: Exchange the OIDC token for a NuGet key
+        id: login
+        if: github.event_name == 'push' || inputs.publish
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       # Each .snupkg is pushed automatically with the .nupkg beside it, so only the .nupkg glob is
       # listed. --skip-duplicate lets a partial push be re-run without failing on what landed.
       - name: Push to nuget.org
@@ -89,7 +110,7 @@ jobs:
         run: |
           dotnet nuget push "artifacts/*.nupkg" \
             --source https://api.nuget.org/v3/index.json \
-            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
             --skip-duplicate
 
       - name: Report a dry run
