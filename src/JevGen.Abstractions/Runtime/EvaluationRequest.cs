@@ -25,6 +25,16 @@ public sealed record EvaluationRequest
     /// <summary>The questions to evaluate, all against the same state.</summary>
     public required ImmutableArray<JevQuestionDefinition> Questions { get; init; }
 
+    /// <summary>
+    /// State properties marked with <c>[JevSensitive]</c>.
+    /// </summary>
+    /// <remarks>
+    /// These are sent to the provider, because they are part of what the model reasons about,
+    /// but they are redacted from anything written to logs, traces or debug output. The names
+    /// are captured at compile time, so redaction needs no reflection.
+    /// </remarks>
+    public ImmutableArray<string> SensitiveProperties { get; init; } = ImmutableArray<string>.Empty;
+
     /// <summary>The name of the contract interface this request came from.</summary>
     public required string ClientName { get; init; }
 

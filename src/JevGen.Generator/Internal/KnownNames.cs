@@ -13,6 +13,7 @@ internal static class KnownNames
     internal const string DecisionPolicyAttribute = "JevGen.DecisionPolicyAttribute";
     internal const string JevProviderOptionAttribute = "JevGen.JevProviderOptionAttribute";
     internal const string JevJsonContextAttribute = "JevGen.JevJsonContextAttribute";
+    internal const string JevSensitiveAttribute = "JevGen.JevSensitiveAttribute";
 
     internal const string NoulResult = "JevGen.NoulResult";
     internal const string ScoreResult = "JevGen.ScoreResult";

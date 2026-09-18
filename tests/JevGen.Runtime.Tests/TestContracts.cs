@@ -19,6 +19,12 @@ public sealed record Ticket
     public required string Subject { get; init; }
 
     public string? Body { get; init; }
+
+    /// <summary>
+    /// The model reasons about who raised the ticket, but this must never reach diagnostics.
+    /// </summary>
+    [JevSensitive]
+    public string? CustomerEmail { get; init; }
 }
 
 public sealed record TicketAssessment

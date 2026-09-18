@@ -123,6 +123,9 @@ internal sealed record MethodModel : IEquatable<MethodModel>
 
     public string? CancellationTokenParameterName { get; init; }
 
+    /// <summary>Names of state properties marked [JevSensitive].</summary>
+    public EquatableArray<string> SensitiveProperties { get; init; } = EquatableArray<string>.Empty;
+
     /// <summary>The questions this method evaluates, flattened in emission order.</summary>
     public required EquatableArray<QuestionModel> Questions { get; init; }
 

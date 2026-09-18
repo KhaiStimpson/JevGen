@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
@@ -137,6 +139,54 @@ internal sealed partial class ContractParser
         }
 
         _ = method;
+    }
+
+    /// <summary>
+    /// Collects the state properties marked [JevSensitive], so diagnostics can redact them
+    /// without reflecting over the type at run time.
+    /// </summary>
+    private static EquatableArray<string> CollectSensitiveProperties(ITypeSymbol stateType)
+    {
+        var names = ImmutableArray.CreateBuilder<string>();
+        Collect(stateType, names, new HashSet<string>(StringComparer.Ordinal), depth: 0);
+        return new EquatableArray<string>(names.ToImmutable());
+    }
+
+    private static void Collect(
+        ITypeSymbol type,
+        ImmutableArray<string>.Builder names,
+        HashSet<string> visited,
+        int depth)
+    {
+        // Nested state is uncommon and deep recursion is not worth the compile time; three
+        // levels covers every realistic shape.
+        if (depth > 3 || type is not INamedTypeSymbol named || !visited.Add(named.ToFullyQualified()))
+        {
+            return;
+        }
+
+        foreach (var member in named.GetMembers())
+        {
+            switch (member)
+            {
+                case IPropertySymbol { IsStatic: false, IsIndexer: false } property:
+                    if (property.FindAttribute(KnownNames.JevSensitiveAttribute) is not null)
+                    {
+                        names.Add(property.Name);
+                    }
+                    else if (property.Type.SpecialType == SpecialType.None)
+                    {
+                        Collect(property.Type, names, visited, depth + 1);
+                    }
+
+                    break;
+
+                case IFieldSymbol { IsStatic: false, AssociatedSymbol: null } field
+                    when field.FindAttribute(KnownNames.JevSensitiveAttribute) is not null:
+                    names.Add(field.Name);
+                    break;
+            }
+        }
     }
 
     private static bool IsCancellationToken(ITypeSymbol type)

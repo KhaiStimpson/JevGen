@@ -197,6 +197,48 @@ public sealed class GenerationTests
     }
 
     [Fact]
+    public void SensitiveStatePropertiesAreCapturedForRedaction()
+    {
+        var result = GeneratorHarness.Run("""
+            using System.Threading;
+            using System.Threading.Tasks;
+            using JevGen;
+
+            namespace Support;
+
+            public sealed record Customer
+            {
+                [JevSensitive]
+                public required string Email { get; init; }
+            }
+
+            public sealed record Transaction
+            {
+                public required decimal Amount { get; init; }
+
+                [JevSensitive]
+                public required string CardholderName { get; init; }
+
+                public required Customer Customer { get; init; }
+            }
+
+            [JevClient]
+            public interface IFraudAI
+            {
+                [JevNoul("Is this fraudulent?")]
+                Task<NoulResult> AssessAsync(Transaction transaction, CancellationToken cancellationToken = default);
+            }
+            """);
+
+        Assert.Empty(result.Errors);
+
+        var source = result.Source("IFraudAI");
+
+        // Captured at compile time so redaction needs no reflection, and nested state is covered.
+        Assert.Contains("SensitiveProperties = global::System.Collections.Immutable.ImmutableArray.Create<string>(\"CardholderName\", \"Email\")", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GenerationIsDeterministic()
     {
         var first = GeneratorHarness.Run(TestContracts.Wrap(TestContracts.Aggregate)).Source("ITicketAI");

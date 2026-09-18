@@ -179,6 +179,7 @@ internal sealed partial class ContractParser
             StateName = stateName,
             ContextParameters = contextParameters,
             CancellationTokenParameterName = cancellationTokenName,
+            SensitiveProperties = CollectSensitiveProperties(state.Type),
             Questions = questions,
             Aggregate = aggregate,
             Model = attribute.GetNamedString("Model"),

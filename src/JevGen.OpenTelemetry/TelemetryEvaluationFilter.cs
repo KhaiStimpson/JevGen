@@ -79,8 +79,9 @@ public sealed class TelemetryEvaluationFilter(
             if (settings.RecordState)
             {
                 // Only ever reached when the application has explicitly accepted that model
-                // inputs will reach its telemetry backend.
-                activity.SetTag("jevgen.state", DescribeState(request));
+                // inputs will reach its telemetry backend. Properties marked [JevSensitive] are
+                // redacted even then.
+                activity.SetTag("jevgen.state", JevRedaction.Describe(request));
             }
         }
 
@@ -179,20 +180,6 @@ public sealed class TelemetryEvaluationFilter(
         ScoreQuestionResult score => score.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
         _ => result.GetType().Name,
     };
-
-    private static string DescribeState(EvaluationRequest request)
-    {
-        try
-        {
-            return request.StateTypeInfo is not null
-                ? System.Text.Json.JsonSerializer.Serialize(request.State, request.StateTypeInfo)
-                : request.State.GetType().Name;
-        }
-        catch (Exception exception) when (exception is System.Text.Json.JsonException or NotSupportedException)
-        {
-            return request.State.GetType().Name;
-        }
-    }
 }
 
 internal static partial class TelemetryLog

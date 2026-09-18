@@ -285,6 +285,13 @@ internal static partial class ClientEmitter
             source.AppendLine($"    State = {stateExpression},");
             source.AppendLine($"    StateTypeInfo = {stateTypeInfoExpression},");
             source.AppendLine($"    Questions = {method.Name}_Questions,");
+
+            if (!method.SensitiveProperties.IsEmpty)
+            {
+                var names = string.Join(", ", method.SensitiveProperties.Values.Select(SourceBuilder.Literal));
+                source.AppendLine($"    SensitiveProperties = {Immutable}ImmutableArray.Create<string>({names}),");
+            }
+
             source.AppendLine($"    ClientName = {SourceBuilder.Literal(client.DisplayName)},");
             source.AppendLine($"    MethodName = {SourceBuilder.Literal(method.Name)},");
             source.AppendLine($"    ContractVersion = {SourceBuilder.Literal(client.ContractVersion)},");

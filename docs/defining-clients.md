@@ -122,9 +122,10 @@ public sealed record Transaction
 }
 ```
 
-The property is still sent — it is part of what the model reasons about — but generated logging
-and diagnostic helpers redact it. Telemetry does not record state at all unless you explicitly
-turn it on; see [telemetry.md](telemetry.md).
+The property is still sent — it is part of what the model reasons about — but it is replaced
+with `[redacted]` in anything written to logs, traces or debug output. The names are collected at
+compile time, so redaction needs no reflection and works under Native AOT. Telemetry does not
+record state at all unless you explicitly turn it on; see [telemetry.md](telemetry.md).
 
 ## Primitive returns
 

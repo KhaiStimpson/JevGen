@@ -62,6 +62,38 @@ Defaults are conservative on purpose:
 - **Question identifiers are** recorded, because they describe contract shape rather than data.
 - **API keys are never recorded**, under any setting. There is no option to change that.
 
+## Redacting sensitive state
+
+Even with `RecordState` turned on, properties marked `[JevSensitive]` are replaced with
+`[redacted]`:
+
+```csharp
+public sealed record Transaction
+{
+    public required decimal Amount { get; init; }
+
+    [JevSensitive]
+    public required string CardholderEmail { get; init; }
+}
+```
+
+```json
+{ "amount": 2480.00, "cardholderEmail": "[redacted]" }
+```
+
+The property is still sent to the provider, because it is part of what the model reasons about.
+It simply never reaches a trace.
+
+The property names are collected by the source generator, so redaction needs no reflection and
+works in a trimmed or Native AOT application. Nested objects and collections are covered.
+
+`JevRedaction.Describe` is public, so a custom logging or auditing filter can use the same
+redaction:
+
+```csharp
+var safe = JevRedaction.Describe(context.Request);
+```
+
 ## Logging
 
 Structured logs are emitted through `Microsoft.Extensions.Logging`:
