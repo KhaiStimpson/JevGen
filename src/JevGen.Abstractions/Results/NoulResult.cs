@@ -16,6 +16,13 @@ public readonly record struct NoulResult : IAIResult
     public double Probability { get; init; }
 
     /// <summary>Provenance for the evaluation that produced this result, when recorded.</summary>
+    /// <remarks>
+    /// Excluded from JSON. Results are frequently returned straight from an API, and provider
+    /// names, model identifiers and request ids are internal operational detail rather than
+    /// something to publish to callers. Read it in code; project it deliberately if you want it
+    /// on the wire.
+    /// </remarks>
+    [System.Text.Json.Serialization.JsonIgnore]
     public EvaluationMetadata? Metadata { get; init; }
 
     /// <summary>

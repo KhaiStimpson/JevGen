@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>NativeAotSample</RootNamespace>
+    <AssemblyName>JevGen.Samples.NativeAot</AssemblyName>
+
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/JevGen.Policies/JevGen.Policies.csproj" />
+    <ProjectReference Include="../../src/JevGen.Providers.TypeSafe/JevGen.Providers.TypeSafe.csproj" />
+  </ItemGroup>
+
+</Project>

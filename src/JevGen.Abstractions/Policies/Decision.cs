@@ -22,6 +22,11 @@ public readonly record struct Decision<T> : IAIResult
     public DecisionAction Action { get; init; }
 
     /// <summary>Provenance for the evaluation that produced this decision, when recorded.</summary>
+    /// <remarks>
+    /// Excluded from JSON, for the same reason as on the other result types: provider and model
+    /// identifiers are operational detail, not something to publish to API callers.
+    /// </remarks>
+    [System.Text.Json.Serialization.JsonIgnore]
     public EvaluationMetadata? Metadata { get; init; }
 
     /// <summary>Whether the policy classified the decision as <see cref="DecisionAction.Accept"/>.</summary>

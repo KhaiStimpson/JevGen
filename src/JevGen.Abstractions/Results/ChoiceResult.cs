@@ -34,6 +34,13 @@ public readonly record struct ChoiceResult<T> : IAIResult
     }
 
     /// <summary>Provenance for the evaluation that produced this result, when recorded.</summary>
+    /// <remarks>
+    /// Excluded from JSON. Results are frequently returned straight from an API, and provider
+    /// names, model identifiers and request ids are internal operational detail rather than
+    /// something to publish to callers. Read it in code; project it deliberately if you want it
+    /// on the wire.
+    /// </remarks>
+    [System.Text.Json.Serialization.JsonIgnore]
     public EvaluationMetadata? Metadata { get; init; }
 
     /// <summary>The probability assigned to <paramref name="option"/>, or zero when absent.</summary>

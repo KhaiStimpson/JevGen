@@ -1,5 +1,10 @@
 <Solution>
   <Folder Name="/samples/">
+    <Project Path="samples/AgentToolRouting/AgentToolRouting.csproj" />
+    <Project Path="samples/AspNetCore/AspNetCore.csproj" />
+    <Project Path="samples/ContentModeration/ContentModeration.csproj" />
+    <Project Path="samples/FraudDetection/FraudDetection.csproj" />
+    <Project Path="samples/NativeAot/NativeAot.csproj" />
     <Project Path="samples/TicketRouting/TicketRouting.csproj" />
   </Folder>
   <Folder Name="/src/">
@@ -7,6 +12,7 @@
     <Project Path="src/JevGen.Analyzers/JevGen.Analyzers.csproj" />
     <Project Path="src/JevGen.AspNetCore/JevGen.AspNetCore.csproj" />
     <Project Path="src/JevGen.Cli/JevGen.Cli.csproj" />
+    <Project Path="src/JevGen.CodeFixes/JevGen.CodeFixes.csproj" />
     <Project Path="src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
     <Project Path="src/JevGen.Extensions.AI/JevGen.Extensions.AI.csproj" />
     <Project Path="src/JevGen.Generator/JevGen.Generator.csproj" />

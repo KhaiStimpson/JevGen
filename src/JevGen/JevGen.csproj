@@ -26,6 +26,11 @@
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
                       SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.CodeFixes/JevGen.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,6 +38,8 @@
           Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Generator/$(Configuration)/netstandard2.0/JevGen.Generator.dll')" />
     <None Include="$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll"
           Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll')" />
+    <None Include="$(OutputPath)/../../../JevGen.CodeFixes/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.CodeFixes/$(Configuration)/netstandard2.0/JevGen.CodeFixes.dll')" />
   </ItemGroup>
 
 </Project>

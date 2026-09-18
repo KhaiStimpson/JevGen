@@ -13,6 +13,7 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +24,7 @@
     <ProjectReference Include="../../src/JevGen.Providers.Anthropic/JevGen.Providers.Anthropic.csproj" />
     <ProjectReference Include="../../src/JevGen.Providers.Gemini/JevGen.Providers.Gemini.csproj" />
     <ProjectReference Include="../../src/JevGen.AspNetCore/JevGen.AspNetCore.csproj" />
+    <ProjectReference Include="../../samples/AspNetCore/AspNetCore.csproj" />
   </ItemGroup>
 
 </Project>
