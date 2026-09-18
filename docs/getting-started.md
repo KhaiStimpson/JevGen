@@ -3,12 +3,15 @@
 ## Install
 
 ```bash
-dotnet add package JevGen
-dotnet add package JevGen.Providers.TypeSafe
+dotnet add package JevGen --prerelease
+dotnet add package JevGen.Providers.TypeSafe --prerelease
 ```
 
 `JevGen` brings the source generator and analyzers with it as analyzer assets. You do not
 reference them separately.
+
+`--prerelease` is required while the current release is `1.0.0-preview.1`; NuGet skips prerelease
+versions otherwise. Use `--version 1.0.0-preview.1` to pin instead.
 
 Requires .NET 10 or later and C# 11 or later.
 
@@ -125,7 +128,7 @@ Console.WriteLine(JevGenDebug.Describe<ITicketAI>());
 Or from the command line, over a built assembly:
 
 ```bash
-dotnet tool install -g JevGen.Cli
+dotnet tool install -g JevGen.Cli --prerelease
 jevgen inspect ./bin/Debug/net10.0/MyApp.dll
 ```
 
