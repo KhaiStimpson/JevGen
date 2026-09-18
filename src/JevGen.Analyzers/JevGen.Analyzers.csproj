@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>JevGen.Analyzers</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Description>Compiler diagnostics and code fixes for JevGen contracts.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The diagnostic catalogue is shared so both packages report identical descriptors. -->
+    <Compile Include="../JevGen.Generator/Internal/JevDiagnostics.cs" Link="Shared/JevDiagnostics.cs" />
+    <Compile Include="../JevGen.Generator/Internal/KnownNames.cs" Link="Shared/KnownNames.cs" />
+    <Compile Include="../JevGen.Generator/Internal/Polyfills.cs" Link="Shared/Polyfills.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="../JevGen.Generator/AnalyzerReleases.Shipped.md" Link="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="../JevGen.Generator/AnalyzerReleases.Unshipped.md" Link="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+</Project>

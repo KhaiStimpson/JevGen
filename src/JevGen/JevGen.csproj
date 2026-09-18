@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsShippingLibrary>true</IsShippingLibrary>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen</RootNamespace>
+    <Description>Refit-style, source-generated, strongly typed AI decision clients for .NET. This is the package consumers install; the source generator and analyzers flow with it.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../JevGen.Abstractions/JevGen.Abstractions.csproj" />
+    <ProjectReference Include="../JevGen.Providers.Abstractions/JevGen.Providers.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- Ship the generator and analyzers as analyzer assets so consumers only install JevGen. -->
+  <ItemGroup>
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Generator/JevGen.Generator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Condition="'$(SkipJevGenAnalyzers)' != 'true'" Include="../JevGen.Analyzers/JevGen.Analyzers.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)/../../../JevGen.Generator/$(Configuration)/netstandard2.0/JevGen.Generator.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Generator/$(Configuration)/netstandard2.0/JevGen.Generator.dll')" />
+    <None Include="$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)/../../../JevGen.Analyzers/$(Configuration)/netstandard2.0/JevGen.Analyzers.dll')" />
+  </ItemGroup>
+
+</Project>
