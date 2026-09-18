@@ -79,7 +79,15 @@ public sealed record JevFixture
             }
             else if (answer.Choice is { } choice)
             {
-                runtime.Choice(questionId, choice, answer.Confidence ?? 1d, answer.Probabilities);
+                // Match the wire protocol: when no explicit confidence is recorded, the selected
+                // option's own probability is the confidence.
+                var confidence = answer.Confidence
+                                 ?? (answer.Probabilities is not null
+                                     && answer.Probabilities.TryGetValue(choice, out var selected)
+                                     ? selected
+                                     : 1d);
+
+                runtime.Choice(questionId, choice, confidence, answer.Probabilities);
             }
             else if (answer.Score is { } score)
             {

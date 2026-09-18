@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.Runtime.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/JevGen.Policies/JevGen.Policies.csproj" />
+    <ProjectReference Include="../../src/JevGen.Testing/JevGen.Testing.csproj" />
+    <ProjectReference Include="../../src/JevGen.Jev/JevGen.Jev.csproj" />
+  </ItemGroup>
+
+</Project>

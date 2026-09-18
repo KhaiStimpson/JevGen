@@ -176,6 +176,27 @@ public sealed class GenerationTests
     }
 
     [Fact]
+    public void QuestionIdentifiersMayRepeatAcrossMethods()
+    {
+        // Each method builds its own request, so two methods may legitimately ask the same
+        // question id. Generated mappers must not collide.
+        var result = GeneratorHarness.Run(TestContracts.Wrap("""
+            [JevClient]
+            public interface ITicketAI
+            {
+                [JevScore("Rate the severity.", Min = 1, Max = 5)]
+                Task<ScoreResult> SeverityAsync(Ticket ticket, CancellationToken cancellationToken = default);
+
+                [JevNoul("Is it urgent?", Id = "severity")]
+                Task<NoulResult> AlsoSeverityAsync(Ticket ticket, CancellationToken cancellationToken = default);
+            }
+            """));
+
+        Assert.Empty(result.GeneratorDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
     public void GenerationIsDeterministic()
     {
         var first = GeneratorHarness.Run(TestContracts.Wrap(TestContracts.Aggregate)).Source("ITicketAI");

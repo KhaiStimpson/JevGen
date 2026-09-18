@@ -66,9 +66,12 @@ internal static partial class ClientEmitter
                 EmitRequestFactory(source, client, method);
             }
 
-            foreach (var question in AllQuestions(client))
+            foreach (var method in client.Methods)
             {
-                EmitQuestionMapper(source, question);
+                foreach (var question in method.Questions)
+                {
+                    EmitQuestionMapper(source, method, question);
+                }
             }
 
             foreach (var enumType in ChoiceEnums(client))

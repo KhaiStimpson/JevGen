@@ -8,7 +8,15 @@ internal static partial class ClientEmitter
 {
     // ------------------------------------------------------- result mapping
 
-    private static string MapperName(QuestionModel question) => "MapQuestion_" + SourceBuilder.Identifier(question.Id);
+    /// <summary>
+    /// The name of the mapper for one question.
+    /// </summary>
+    /// <remarks>
+    /// Scoped to the declaring method: two methods on the same contract may legitimately declare
+    /// the same question identifier, because each builds its own request.
+    /// </remarks>
+    private static string MapperName(MethodModel method, QuestionModel question)
+        => "MapQuestion_" + method.Name + "_" + SourceBuilder.Identifier(question.Id);
 
     private static string EnumMapperName(string enumTypeName)
         => "MapOption_" + SourceBuilder.Identifier(enumTypeName.Replace("global::", string.Empty));
@@ -28,14 +36,14 @@ internal static partial class ClientEmitter
         _ => throw new InvalidOperationException($"Question '{question.Id}' has no scalar result shape."),
     };
 
-    private static void EmitQuestionMapper(SourceBuilder source, QuestionModel question)
+    private static void EmitQuestionMapper(SourceBuilder source, MethodModel method, QuestionModel question)
     {
         var resultType = ResultTypeName(question);
         var id = SourceBuilder.Literal(question.Id);
 
         source.AppendLine($"/// <summary>Maps the answer to question <c>{question.Id}</c>.</summary>");
 
-        using (source.Block($"internal static {resultType} {MapperName(question)}({Jg}EvaluationResponse response)"))
+        using (source.Block($"internal static {resultType} {MapperName(method, question)}({Jg}EvaluationResponse response)"))
         {
             switch (question.Shape)
             {
@@ -191,18 +199,23 @@ internal static partial class ClientEmitter
         {
             if (method.Shape == ResultShape.Aggregate && method.Aggregate is { } aggregate)
             {
-                EmitAggregate(source, aggregate, "return ", ";");
+                EmitAggregate(source, method, aggregate, "return ", ";");
             }
             else
             {
-                source.AppendLine($"return {MapperName(method.Questions[0])}(response);");
+                source.AppendLine($"return {MapperName(method, method.Questions[0])}(response);");
             }
         }
 
         source.AppendLine();
     }
 
-    private static void EmitAggregate(SourceBuilder source, AggregateModel aggregate, string prefix, string suffix)
+    private static void EmitAggregate(
+        SourceBuilder source,
+        MethodModel method,
+        AggregateModel aggregate,
+        string prefix,
+        string suffix)
     {
         source.AppendLine($"{prefix}new {aggregate.TypeName}");
 
@@ -212,11 +225,11 @@ internal static partial class ClientEmitter
             {
                 if (property.Question is { } question)
                 {
-                    source.AppendLine($"{property.PropertyName} = {MapperName(question)}(response),");
+                    source.AppendLine($"{property.PropertyName} = {MapperName(method, question)}(response),");
                 }
                 else
                 {
-                    EmitAggregate(source, property.Nested!, property.PropertyName + " = ", ",");
+                    EmitAggregate(source, method, property.Nested!, property.PropertyName + " = ", ",");
                 }
             }
         }
