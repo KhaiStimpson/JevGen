@@ -5,9 +5,14 @@
   <Folder Name="/src/">
     <Project Path="src/JevGen.Abstractions/JevGen.Abstractions.csproj" />
     <Project Path="src/JevGen.Analyzers/JevGen.Analyzers.csproj" />
+    <Project Path="src/JevGen.AspNetCore/JevGen.AspNetCore.csproj" />
+    <Project Path="src/JevGen.Cli/JevGen.Cli.csproj" />
     <Project Path="src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <Project Path="src/JevGen.Extensions.AI/JevGen.Extensions.AI.csproj" />
     <Project Path="src/JevGen.Generator/JevGen.Generator.csproj" />
     <Project Path="src/JevGen.Jev/JevGen.Jev.csproj" />
+    <Project Path="src/JevGen.OpenTelemetry/JevGen.OpenTelemetry.csproj" />
+    <Project Path="src/JevGen.Policies/JevGen.Policies.csproj" />
     <Project Path="src/JevGen.Providers.Abstractions/JevGen.Providers.Abstractions.csproj" />
     <Project Path="src/JevGen.Providers.Anthropic/JevGen.Providers.Anthropic.csproj" />
     <Project Path="src/JevGen.Providers.Chat/JevGen.Providers.Chat.csproj" />
@@ -16,6 +21,7 @@
     <Project Path="src/JevGen.Providers.OpenAI/JevGen.Providers.OpenAI.csproj" />
     <Project Path="src/JevGen.Providers.OpenRouter/JevGen.Providers.OpenRouter.csproj" />
     <Project Path="src/JevGen.Providers.TypeSafe/JevGen.Providers.TypeSafe.csproj" />
+    <Project Path="src/JevGen.Testing/JevGen.Testing.csproj" />
     <Project Path="src/JevGen/JevGen.csproj" />
   </Folder>
   <Folder Name="/tests/">

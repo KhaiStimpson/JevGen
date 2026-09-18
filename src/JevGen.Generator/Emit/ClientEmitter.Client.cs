@@ -53,7 +53,7 @@ internal static partial class ClientEmitter
 
     private static void EmitClient(SourceBuilder source, ClientModel client)
     {
-        source.AppendLine($"/// <summary>The generated implementation of <see cref=\"{Display(client.FullyQualifiedInterfaceName)}\"/>.</summary>");
+        source.AppendLine($"/// <summary>The generated implementation of <c>{Display(client.FullyQualifiedInterfaceName)}</c>.</summary>");
         EmitGeneratedCodeAttribute(source);
 
         using (source.Block(
@@ -119,7 +119,7 @@ internal static partial class ClientEmitter
     private static void EmitRegistration(SourceBuilder source, ClientModel client)
     {
         source.AppendLine("/// <summary>");
-        source.AppendLine($"/// Registers <see cref=\"{Display(client.FullyQualifiedInterfaceName)}\"/> with the JevGen client registry when this");
+        source.AppendLine($"/// Registers <c>{Display(client.FullyQualifiedInterfaceName)}</c> with the JevGen client registry when this");
         source.AppendLine("/// module loads, so AddJevClient&lt;T&gt;() resolves it without assembly scanning or reflection.");
         source.AppendLine("/// </summary>");
         EmitGeneratedCodeAttribute(source);

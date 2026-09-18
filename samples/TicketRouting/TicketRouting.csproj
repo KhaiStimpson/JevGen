@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/JevGen/JevGen.csproj" />
+    <ProjectReference Include="../../src/JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/JevGen.Providers.TypeSafe/JevGen.Providers.TypeSafe.csproj" />
+    <ProjectReference Include="../../src/JevGen.Testing/JevGen.Testing.csproj" />
   </ItemGroup>
 
 </Project>

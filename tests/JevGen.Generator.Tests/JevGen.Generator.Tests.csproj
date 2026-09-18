@@ -5,6 +5,8 @@
     <RootNamespace>JevGen.Generator.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- This project hosts the generator itself; it must not also run as an analyzer here. -->
+    <AttachJevGenAnalyzers>false</AttachJevGenAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>

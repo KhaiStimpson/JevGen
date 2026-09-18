@@ -23,6 +23,12 @@ public sealed class EvaluationContext
     /// <summary>The one-based attempt number, counting retries and fallbacks.</summary>
     public int Attempt { get; internal set; }
 
+    /// <summary>
+    /// Records that the pipeline is about to make another attempt, so filters further in see an
+    /// accurate attempt number.
+    /// </summary>
+    public void RecordRetry() => Attempt++;
+
     /// <summary>Scratch space shared between filters for the life of the evaluation.</summary>
     public IDictionary<string, object?> Items { get; } = new Dictionary<string, object?>(StringComparer.Ordinal);
 }

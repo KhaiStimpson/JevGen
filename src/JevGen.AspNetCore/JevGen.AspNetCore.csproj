@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsShippingLibrary>true</IsShippingLibrary>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JevGen.AspNetCore</RootNamespace>
+    <Description>ASP.NET Core integration for JevGen: health checks, problem-details mapping, confidence-gate endpoint filters and configuration validation.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../JevGen.DependencyInjection/JevGen.DependencyInjection.csproj" />
+    <ProjectReference Include="../JevGen.Policies/JevGen.Policies.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    Attaching the JevGen source generator to projects that consume JevGen by project reference.
+
+    When JevGen is consumed as a NuGet package, the generator and analyzers flow automatically:
+    they are packed into analyzers/dotnet/cs and NuGet applies them to the consuming project.
+    Analyzer assets do NOT flow the same way through a ProjectReference chain, so inside this
+    repository every sample and test that declares a [JevClient] contract has to attach them
+    explicitly. Without this, those projects would compile cleanly and silently produce no
+    client at all.
+  -->
+
+  <PropertyGroup Condition="'$(AttachJevGenAnalyzers)' == ''">
+    <AttachJevGenAnalyzers Condition="$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)samples$([System.IO.Path]::DirectorySeparatorChar)'))">true</AttachJevGenAnalyzers>
+    <AttachJevGenAnalyzers Condition="$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)tests$([System.IO.Path]::DirectorySeparatorChar)'))">true</AttachJevGenAnalyzers>
+    <AttachJevGenAnalyzers Condition="'$(AttachJevGenAnalyzers)' == ''">false</AttachJevGenAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(AttachJevGenAnalyzers)' == 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Generator/JevGen.Generator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/JevGen.Analyzers/JevGen.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+</Project>
