@@ -231,15 +231,6 @@ Requires the .NET 10 SDK.
 Pre-1.0, published on nuget.org as `1.0.0-preview.2`. The public API may still change; see
 [docs/architecture.md](docs/architecture.md#breaking-change-strategy) for the versioning policy.
 
-`1.0.0-preview.1` could not reach any live host: it spoke a wire format the System One schema
-does not define, and every OpenRouter call failed with `404: Not Found`. `1.0.0-preview.2`
-corrects the schema and the endpoints. **Upgrade; preview.1 does not work.**
-
-`JevModel.Fast` and `JevModel.Pro` are gone with it. They named latency and quality tiers no
-host publishes, so a contract that used one could only ever fail at run time; removing them
-makes that a compile error instead. `JevModel.Latest` remains, and any other identifier is sent
-to the host unchanged, which is how a build is pinned.
-
 ## Licence
 
 MIT.
