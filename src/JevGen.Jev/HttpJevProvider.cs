@@ -43,7 +43,11 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
     protected abstract Uri DefaultBaseAddress { get; }
 
     /// <summary>The path of the evaluation endpoint, relative to the base address.</summary>
-    protected virtual string EvaluatePath => "v1/evaluate";
+    /// <remarks>
+    /// The default is the path TypeSafe publishes for System One. Hosts that serve the same
+    /// schema somewhere else — OpenRouter does — override it.
+    /// </remarks>
+    protected virtual string EvaluatePath => "v1/systemone";
 
     /// <inheritdoc />
     /// <remarks>
@@ -66,8 +70,14 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
     protected abstract void PrepareRequest(HttpRequestMessage request, TOptions options);
 
     /// <summary>Collects host-specific response detail, such as routing information.</summary>
+    /// <remarks>
+    /// Token counts, cost and the upstream provider are read from the body by the base class,
+    /// because every System One host reports them the same way. This is for what a host adds on
+    /// top of that.
+    /// </remarks>
     protected virtual void CollectMetadata(
         HttpResponseMessage response,
+        JevResponsePayload body,
         IDictionary<string, object?> properties)
     {
     }
@@ -143,7 +153,8 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
             ["duration"] = Stopwatch.GetElapsedTime(started),
         };
 
-        CollectMetadata(response, properties);
+        CollectUsage(body, properties);
+        CollectMetadata(response, body, properties);
 
         return JevProviderResponse.Create(
             new JevProviderMetadata
@@ -154,6 +165,34 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
                 Properties = properties,
             },
             JevProtocol.ToResults(request, body, Name));
+    }
+
+    /// <summary>Records what the evaluation consumed, and who served it.</summary>
+    private static void CollectUsage(JevResponsePayload body, IDictionary<string, object?> properties)
+    {
+        if (body.Usage is { } usage)
+        {
+            if (usage.InputTokens is { } inputTokens)
+            {
+                properties["usage.inputTokens"] = inputTokens;
+            }
+
+            if (usage.OutputTokens is { } outputTokens)
+            {
+                properties["usage.outputTokens"] = outputTokens;
+            }
+
+            // Only the gateways price a call. TypeSafe's own schema has no cost field.
+            if (usage.Cost is { } cost)
+            {
+                properties["usage.cost"] = cost;
+            }
+        }
+
+        if (body.Provider is { Length: > 0 } provider)
+        {
+            properties["provider"] = provider;
+        }
     }
 
     /// <summary>Sends the request, mapping transport failures onto the JevGen error model.</summary>
@@ -216,7 +255,7 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
         CancellationToken cancellationToken)
     {
         var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var detail = JevProtocol.TryParseError(body)?.Error?.Message ?? response.ReasonPhrase ?? "no detail";
+        var detail = JevProtocol.TryReadErrorMessage(body) ?? response.ReasonPhrase ?? "no detail";
         var status = (int)response.StatusCode;
 
         return response.StatusCode switch

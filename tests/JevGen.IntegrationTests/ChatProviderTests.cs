@@ -12,6 +12,10 @@ namespace JevGen.IntegrationTests;
 /// Covers running evaluation contracts on general-purpose chat models, and in particular the
 /// rule that these providers must not silently substitute uncalibrated probabilities.
 /// </summary>
+/// <remarks>
+/// These servers stand in for the OpenAI, Anthropic and Gemini chat APIs, which do not speak
+/// System One, so they turn the mock's schema validation off. The Jev providers keep it on.
+/// </remarks>
 public sealed class ChatProviderTests
 {
     private const string Answer = """
@@ -32,6 +36,7 @@ public sealed class ChatProviderTests
     {
         await using var server = new MockJevServer
         {
+            ValidateSchema = false,
             Respond = _ => MockJevServer.MockResponse.Json(OpenAIBody(Answer)),
         };
 
@@ -77,6 +82,7 @@ public sealed class ChatProviderTests
     {
         await using var server = new MockJevServer
         {
+            ValidateSchema = false,
             Respond = _ => MockJevServer.MockResponse.Json(OpenAIBody(Answer)),
         };
 
@@ -119,7 +125,7 @@ public sealed class ChatProviderTests
             },
         });
 
-        await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.Json(body) };
+        await using var server = new MockJevServer { ValidateSchema = false, Respond = _ => MockJevServer.MockResponse.Json(body) };
 
         var services = new ServiceCollection();
         services.AddJevGen(options => options.ValidateOnStart = false);
@@ -158,7 +164,7 @@ public sealed class ChatProviderTests
             },
         });
 
-        await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.Json(body) };
+        await using var server = new MockJevServer { ValidateSchema = false, Respond = _ => MockJevServer.MockResponse.Json(body) };
 
         var services = new ServiceCollection();
         services.AddJevGen(options => options.ValidateOnStart = false);
@@ -196,6 +202,7 @@ public sealed class ChatProviderTests
 
         await using var server = new MockJevServer
         {
+            ValidateSchema = false,
             Respond = _ => MockJevServer.MockResponse.Json(OpenAIBody(fenced)),
         };
 
@@ -222,6 +229,7 @@ public sealed class ChatProviderTests
     {
         await using var server = new MockJevServer
         {
+            ValidateSchema = false,
             Respond = _ => MockJevServer.MockResponse.Json(OpenAIBody("""{"answers":{}}""")),
         };
 

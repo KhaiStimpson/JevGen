@@ -31,6 +31,31 @@ To see what was generated:
 
 Output lands in `obj/<config>/<tfm>/generated/JevGen.Generator/`.
 
+## `Provider 'openrouter' failed with 404: Not Found`
+
+Every call fails, whatever the contract. You are on `1.0.0-preview.1`, which posted to a path no
+host serves, in a wire format the System One schema does not define.
+
+Upgrade to `1.0.0-preview.2` or later. No contract change is needed.
+
+If it persists on a current version, check `options.BaseAddress`. Providers append their own
+path to it — `alpha/decisions` for OpenRouter, `v1/systemone` for TypeSafe — so a base address
+that already carries a path, such as `https://openrouter.ai/api/v1/`, produces a URL neither
+host serves. Leave it unset unless you are pointing at a gateway.
+
+## `OpenRouter does not host a 'jev-fast' variant of Jev`
+
+`JevModel.Fast` and `JevModel.Pro` name tiers no host currently publishes. Use
+`JevModel.Latest`, or name a build explicitly:
+
+```csharp
+options.Model = "typesafe/jev-1.13-20260917";
+```
+
+The alternative — sending an invented identifier and letting the host reject it — is what made
+every preview.1 call fail with an unexplained 404. See
+[provider configuration](provider-configuration.md#endpoints-and-models).
+
 ## Serialization fails at run time
 
 **Symptom:** `EvaluationSerializationException: No JSON serialization metadata is available`.

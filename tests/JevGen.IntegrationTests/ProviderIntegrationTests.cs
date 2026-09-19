@@ -14,44 +14,67 @@ namespace JevGen.IntegrationTests;
 /// </summary>
 public sealed class ProviderIntegrationTests
 {
+    /// <summary>
+    /// Answers in the shape the live decisions endpoint returns: a noul is a <c>noul</c>
+    /// probability, a score is a zero-based level with its legend, and every answer names its
+    /// type. The severity question declares <c>Min = 1, Max = 5</c>, so it is sent five levels
+    /// and level 3 is the 4 the caller sees.
+    /// </summary>
     private const string AssessmentResponse = """
         {
           "id": "req-42",
-          "model": "jev-1",
+          "model": "typesafe/jev-1.13-20260917",
+          "provider": "TypeSafe",
           "answers": {
-            "urgent": { "probability": 0.14 },
+            "urgent": { "type": "noul", "noul": 0.14 },
             "department": {
+              "type": "choice",
               "choice": "technical",
-              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 }
+              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 },
+              "confidence": 0.88
             },
-            "severity": { "score": 4, "confidence": 0.79 }
-          }
+            "severity": {
+              "type": "score",
+              "score": 3,
+              "legend": { "0": "1", "1": "2", "2": "3", "3": "4", "4": "5" },
+              "probabilities": { "0": 0.01, "1": 0.04, "2": 0.15, "3": 0.68, "4": 0.12 },
+              "confidence": 0.79
+            }
+          },
+          "usage": { "input_tokens": 430, "output_tokens": 79, "cost": 0.00001806 }
         }
         """;
 
     private const string RouteResponse = """
         {
           "id": "req-7",
-          "model": "jev-1",
+          "model": "typesafe/jev-1.13-20260917",
           "answers": {
             "route": {
+              "type": "choice",
               "choice": "technical",
-              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 }
+              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 },
+              "confidence": 0.88
             }
-          }
+          },
+          "usage": { "input_tokens": 118, "output_tokens": 12 }
         }
         """;
 
     /// <summary>A route answer with no body-level id, so the host's request-id header is used.</summary>
     private const string RouteResponseWithoutId = """
         {
-          "model": "jev-1",
+          "model": "typesafe/jev-1.13-20260917",
+          "provider": "TypeSafe",
           "answers": {
             "route": {
+              "type": "choice",
               "choice": "technical",
-              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 }
+              "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 },
+              "confidence": 0.88
             }
-          }
+          },
+          "usage": { "input_tokens": 118, "output_tokens": 12, "cost": 0.00000412 }
         }
         """;
 
@@ -85,8 +108,17 @@ public sealed class ProviderIntegrationTests
         Assert.Equal(Department.Technical, assessment.Department.Value);
         Assert.Equal(0.88, assessment.Department.Confidence, 6);
         Assert.Equal(0.07, assessment.Department.ProbabilityOf(Department.Billing), 6);
+
+        // Level 3 of the five the question declared, back on the contract's 1..5 scale.
         Assert.Equal(4d, assessment.Severity.Value, 6);
         Assert.Equal("req-42", assessment.Severity.Metadata!.RequestId);
+
+        // What the evaluation consumed comes back as metadata, not as part of the answer.
+        var properties = assessment.Severity.Metadata.Properties;
+        Assert.Equal(430L, properties["usage.inputTokens"]);
+        Assert.Equal(79L, properties["usage.outputTokens"]);
+        Assert.Equal(0.00001806, Assert.IsType<double>(properties["usage.cost"]), 12);
+        Assert.Equal("TypeSafe", properties["provider"]);
     }
 
     [Fact]
@@ -110,12 +142,24 @@ public sealed class ProviderIntegrationTests
         Assert.Equal("choice", questions.GetProperty("department").GetProperty("type").GetString());
         Assert.Equal("score", questions.GetProperty("severity").GetProperty("type").GetString());
 
-        // Enum criteria reach the model.
+        // The prompt is `instructions`, not `question`.
+        Assert.Equal(
+            "Does this require urgent attention?",
+            questions.GetProperty("urgent").GetProperty("instructions").GetString());
+
+        // Enum criteria reach the model, as a `criteria` object keyed by option id.
         Assert.Equal(
             "Defects, outages and technical support",
-            questions.GetProperty("department").GetProperty("options").GetProperty("technical").GetString());
+            questions.GetProperty("department").GetProperty("criteria").GetProperty("technical").GetString());
 
-        Assert.Equal("/v1/jev/evaluate", request.Path);
+        // A score declares its levels as an ordered array. Min = 1, Max = 5 with no rubric
+        // becomes five numeric levels.
+        Assert.Equal(
+            ["1", "2", "3", "4", "5"],
+            questions.GetProperty("severity").GetProperty("criteria")
+                .EnumerateArray().Select(level => level.GetString()));
+
+        Assert.Equal("/v1/systemone", request.Path);
         Assert.Equal("Bearer test-key", request.Header("Authorization"));
     }
 
@@ -209,14 +253,151 @@ public sealed class ProviderIntegrationTests
         Assert.Equal("JevGen tests", request.Header("X-Title"));
         Assert.Equal("typesafe", request.Header("X-OpenRouter-Provider-Order"));
 
-        // The alias is translated into OpenRouter's Jev identifier.
+        // Jev is a decisions model. OpenRouter serves it on its own endpoint and rejects it on
+        // chat/completions, so the path is not negotiable.
+        Assert.Equal("/alpha/decisions", request.Path);
+
+        // The alias is translated into OpenRouter's Jev identifier, tilde and all.
         using var document = JsonDocument.Parse(request.Body);
-        Assert.Equal("typesafe/jev-1", document.RootElement.GetProperty("model").GetString());
+        Assert.Equal("~typesafe/jev-latest", document.RootElement.GetProperty("model").GetString());
 
         // Routing detail is preserved without changing the core result contract, and the host's
         // request-id header is picked up when the body carries none.
         Assert.Equal("or-99", result.Metadata!.RequestId);
         Assert.Equal("TypeSafe", result.Metadata.Properties["openrouter.provider"]);
+        Assert.Equal(0.00000412, Assert.IsType<double>(result.Metadata.Properties["openrouter.cost"]), 12);
+        Assert.Equal("typesafe/jev-1.13-20260917", result.Metadata.Model);
+    }
+
+    /// <summary>
+    /// A model tier no host publishes fails before a request leaves the process. Sending an
+    /// invented identifier would come back as an opaque 404, which is exactly what
+    /// 1.0.0-preview.1 did for every call.
+    /// </summary>
+    [Theory]
+    [InlineData(JevModel.Fast)]
+    [InlineData(JevModel.Pro)]
+    public async Task AModelTierNoHostPublishesFailsWithAMessageThatSaysSo(string model)
+    {
+        await using var server = new MockJevServer
+        {
+            Respond = _ => MockJevServer.MockResponse.Json(RouteResponse),
+        };
+
+        var services = new ServiceCollection();
+        services.AddJevGen(options => options.ValidateOnStart = false);
+
+        services.AddOpenRouterJev(options =>
+        {
+            options.ApiKey = "or-key";
+            options.BaseAddress = server.BaseAddress;
+            options.Model = model;
+        });
+
+        services.AddJevClient<ITicketAI>().UseOpenRouter();
+
+        await using var provider = services.BuildServiceProvider();
+
+        var exception = await Assert.ThrowsAsync<EvaluationProviderException>(
+            () => provider.GetRequiredService<ITicketAI>().RouteAsync(SampleTicket));
+
+        Assert.Contains("does not host", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("~typesafe/jev-latest", exception.Message, StringComparison.Ordinal);
+        Assert.Empty(server.Requests);
+    }
+
+    /// <summary>An explicitly named build is the caller's choice and is passed through.</summary>
+    [Fact]
+    public async Task AnExplicitModelIdentifierIsSentUnchanged()
+    {
+        await using var server = new MockJevServer
+        {
+            Respond = _ => MockJevServer.MockResponse.Json(RouteResponse),
+        };
+
+        var services = new ServiceCollection();
+        services.AddJevGen(options => options.ValidateOnStart = false);
+
+        services.AddOpenRouterJev(options =>
+        {
+            options.ApiKey = "or-key";
+            options.BaseAddress = server.BaseAddress;
+            options.Model = "typesafe/jev-1.13-20260917";
+        });
+
+        services.AddJevClient<ITicketAI>().UseOpenRouter();
+
+        await using var provider = services.BuildServiceProvider();
+        await provider.GetRequiredService<ITicketAI>().RouteAsync(SampleTicket);
+
+        using var document = JsonDocument.Parse(server.Requests.Single().Body);
+        Assert.Equal("typesafe/jev-1.13-20260917", document.RootElement.GetProperty("model").GetString());
+    }
+
+    /// <summary>
+    /// The 404 that made every 1.0.0-preview.1 call fail still reports what the host said, now
+    /// that error parsing no longer depends on one envelope shape.
+    /// </summary>
+    [Fact]
+    public async Task AHostThatDoesNotServeThePathIsReportedWithItsOwnMessage()
+    {
+        await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.NotFound() };
+
+        var services = new ServiceCollection();
+        services.AddJevGen(options => options.ValidateOnStart = false);
+        services.AddOpenRouterJev(options =>
+        {
+            options.ApiKey = "or-key";
+            options.BaseAddress = server.BaseAddress;
+        });
+
+        services.AddJevClient<ITicketAI>().UseOpenRouter();
+
+        await using var provider = services.BuildServiceProvider();
+
+        var exception = await Assert.ThrowsAsync<EvaluationProviderException>(
+            () => provider.GetRequiredService<ITicketAI>().RouteAsync(SampleTicket));
+
+        Assert.Equal(404, exception.StatusCode);
+        Assert.Contains("Not Found", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A request the host would reject is rejected here too, with the validation body the live
+    /// API returns — and the message names the field, not just the status.
+    /// </summary>
+    [Fact]
+    public async Task ARequestThatDoesNotMatchTheSchemaIsRejectedWithItsFieldNamed()
+    {
+        await using var server = new MockJevServer();
+
+        using var client = new HttpClient { BaseAddress = server.BaseAddress };
+
+        // The 1.0.0-preview.1 wire format, as it would have arrived at the live endpoint.
+        using var response = await client.PostAsync(
+            new Uri("v1/systemone", UriKind.Relative),
+            new StringContent(
+                """
+                {"model":"jev-1","state":{"subject":"Outage"},
+                 "questions":{"route":{"type":"choice","question":"Which department?",
+                 "options":{"billing":null},"probabilities":true}}}
+                """,
+                System.Text.Encoding.UTF8,
+                "application/json"));
+
+        Assert.Equal(422, (int)response.StatusCode);
+
+        // The provider flattens the validation body into a message that names each offending
+        // field, so the failure says what is wrong rather than just reporting a status.
+        var message = JevProtocol.TryReadErrorMessage(await response.Content.ReadAsStringAsync())!;
+
+        Assert.Contains(
+            "questions.route.question: Extra inputs are not permitted", message, StringComparison.Ordinal);
+        Assert.Contains(
+            "questions.route.options: Extra inputs are not permitted", message, StringComparison.Ordinal);
+        Assert.Contains(
+            "questions.route.probabilities: Extra inputs are not permitted", message, StringComparison.Ordinal);
+        Assert.Contains("questions.route.criteria: Field required", message, StringComparison.Ordinal);
     }
 
     [Fact]

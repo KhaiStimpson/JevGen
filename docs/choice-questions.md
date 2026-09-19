@@ -111,12 +111,23 @@ do not always echo casing exactly. An answer matching nothing raises
 ```json
 {
   "type": "choice",
-  "question": "Which department should handle this ticket?",
-  "options": {
+  "instructions": "Which department should handle this ticket?",
+  "criteria": {
     "billing": "Invoices, payments, subscriptions and refunds",
     "technical": "Software defects, outages and technical support",
     "sales": "Pricing questions, upgrades and new business"
-  },
-  "probabilities": true
+  }
 }
 ```
+
+```json
+{
+  "type": "choice",
+  "choice": "technical",
+  "probabilities": { "billing": 0.07, "technical": 0.88, "sales": 0.05 },
+  "confidence": 0.88
+}
+```
+
+There is no flag asking for the distribution. Jev is an evaluation model; the distribution is
+what it produces, and it always comes back.

@@ -23,8 +23,65 @@ services.AddOpenRouterJev(options =>
 services.AddLocalJev(options => options.BaseAddress = new Uri("http://jev.internal:8080/"));
 ```
 
-Model aliases (`JevModel.Latest`, `Fast`, `Pro`) are translated by each provider into the
-identifier that host actually uses, so contracts stay portable.
+## Endpoints and models
+
+Jev is a **decisions model**, not a chat model. It is served on its own endpoint, speaking the
+System One schema — one state, many named questions, typed answers with probabilities — and the
+chat endpoints reject it outright:
+
+```text
+typesafe/jev-1.13 is a decisions model and cannot be used with the chat/completions
+endpoint. Use the /api/alpha/decisions endpoint instead.
+```
+
+| | Endpoint | `JevModel.Latest` resolves to |
+|---|---|---|
+| **OpenRouter** | `POST https://openrouter.ai/api/alpha/decisions` | `~typesafe/jev-latest` |
+| **TypeSafe** | `POST https://api.typesafe.ai/v1/systemone` | `jev-latest` |
+
+An identifier that is not a `JevModel` alias is sent unchanged, so a build can be pinned:
+
+```csharp
+services.AddOpenRouterJev(options =>
+{
+    options.ApiKey = configuration["OpenRouter:ApiKey"];
+    options.Model = "typesafe/jev-1.13-20260917";   // a pinned build
+});
+```
+
+On OpenRouter, `~typesafe/jev-latest` is the floating alias — the leading tilde is OpenRouter's
+marker for an alias rather than a version — `typesafe/jev-1.13` is a version, and
+`typesafe/jev-1.13-20260917` a pinned build. Jev does not appear in the default
+`GET /api/v1/models` listing; its modality is `text->decisions`. On TypeSafe, `GET /v1/models`
+lists what that host accepts.
+
+> **`JevModel.Fast` and `JevModel.Pro` are not currently served by any host.** Neither TypeSafe
+> nor OpenRouter publishes a latency or quality tier. Asking for one fails with a message saying
+> so, before a request is sent — a provider that quietly sent an invented identifier instead
+> would return an opaque 404. The constants remain so a contract that names one keeps compiling
+> if the tiers appear.
+
+> **The TypeSafe endpoint is unverified against the live service.** Its path and model naming are
+> read from the source of the official `typesafe_sdk` 0.7.0 Python package, whose
+> `prepare_system_one` posts `{state, model, questions}` to `/v1/systemone`. Confirming it needs
+> an early-access key. The OpenRouter provider is verified against the live decisions endpoint.
+
+## Evaluation metadata
+
+Every System One host reports what the evaluation consumed, and the gateways report who served
+it and what it cost:
+
+```csharp
+var properties = result.Metadata!.Properties;
+
+properties["usage.inputTokens"]    // 430
+properties["usage.outputTokens"]   // 79
+properties["usage.cost"]           // 0.00001806, where the host prices the call
+properties["provider"]             // "TypeSafe" — the upstream host that answered
+```
+
+OpenRouter mirrors the last two under `openrouter.cost` and `openrouter.provider`, alongside
+`openrouter.model`.
 
 ## Selecting a provider
 
@@ -170,7 +227,7 @@ Provenance survives:
 
 ```csharp
 result.Metadata!.Provider   // "typesafe"
-result.Metadata.Model       // "jev-1"
+result.Metadata.Model       // "typesafe/jev-1.13-20260917" — the build that answered
 result.Metadata.Attempts    // 2
 ```
 

@@ -10,7 +10,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 artifacts="${1:-$root/artifacts}"
-version="${JEVGEN_VERSION:-1.0.0-preview.1}"
+version="${JEVGEN_VERSION:-1.0.0-preview.2}"
 package="$artifacts/JevGen.$version.nupkg"
 
 if [[ ! -f "$package" ]]; then

@@ -38,11 +38,14 @@ All three questions go in a single evaluation:
 
 ```json
 {
+  "model": "~typesafe/jev-latest",
   "state": { "subject": "...", "body": "..." },
   "questions": {
-    "urgent":     { "type": "noul",   "question": "Does this require urgent attention?" },
-    "department": { "type": "choice", "question": "Which department should handle it?", "options": { } },
-    "severity":   { "type": "score",  "question": "Rate the severity.", "min": 1, "max": 5 }
+    "urgent":     { "type": "noul",   "instructions": "Does this require urgent attention?" },
+    "department": { "type": "choice", "instructions": "Which department should handle it?",
+                    "criteria": { "billing": "...", "technical": "...", "sales": "..." } },
+    "severity":   { "type": "score",  "instructions": "Rate the severity.",
+                    "criteria": ["1", "2", "3", "4", "5"] }
   }
 }
 ```

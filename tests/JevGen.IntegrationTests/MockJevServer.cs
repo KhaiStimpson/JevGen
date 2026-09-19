@@ -4,9 +4,15 @@ using System.Text;
 namespace JevGen.IntegrationTests;
 
 /// <summary>
-/// A real HTTP server speaking the Jev protocol, so provider tests exercise the whole
-/// transport: headers, status codes, serialization and error bodies.
+/// A real HTTP server speaking the Jev System One protocol, so provider tests exercise the
+/// whole transport: headers, status codes, serialization and error bodies.
 /// </summary>
+/// <remarks>
+/// Every request is validated against <see cref="SystemOneSchema"/> before <see cref="Respond"/>
+/// sees it, and a request that does not conform is rejected with the validation body the live
+/// API returns. A mock that answers whatever it is sent is how 1.0.0-preview.1 shipped a wire
+/// format no host accepts.
+/// </remarks>
 public sealed class MockJevServer : IAsyncDisposable
 {
     private readonly HttpListener _listener;
@@ -33,7 +39,16 @@ public sealed class MockJevServer : IAsyncDisposable
 
     /// <summary>Produces the response for a request. Replaced per test.</summary>
     public Func<ReceivedRequest, MockResponse> Respond { get; set; } =
-        static _ => MockResponse.Json("""{"answers":{}}""");
+        static _ => MockResponse.Json("""{"model":"jev-latest","answers":{}}""");
+
+    /// <summary>
+    /// Whether requests are held to the System One schema. Off only for tests that deliberately
+    /// send something else.
+    /// </summary>
+    public bool ValidateSchema { get; set; } = true;
+
+    /// <summary>The schema failures of the requests received, keyed by arrival order.</summary>
+    public List<string> SchemaFailures { get; } = [];
 
     /// <summary>One request as the server saw it.</summary>
     public sealed record ReceivedRequest(string Method, string Path, string Body, IReadOnlyDictionary<string, string> Headers)
@@ -52,6 +67,9 @@ public sealed class MockJevServer : IAsyncDisposable
         /// <summary>A failure with a JSON body.</summary>
         public static MockResponse Error(int statusCode, string body = """{"error":{"message":"failed"}}""")
             => new(statusCode, body);
+
+        /// <summary>The bare 404 OpenRouter returns for a path it does not serve.</summary>
+        public static MockResponse NotFound() => new(404, """{"error":{"message":"Not Found","code":404}}""");
     }
 
     private async Task AcceptAsync()
@@ -93,7 +111,7 @@ public sealed class MockJevServer : IAsyncDisposable
                     Requests.Add(received);
                 }
 
-                var response = Respond(received);
+                var response = Answer(received);
 
                 context.Response.StatusCode = response.StatusCode;
                 context.Response.ContentType = "application/json";
@@ -119,6 +137,29 @@ public sealed class MockJevServer : IAsyncDisposable
                 context.Response.Close();
             }
         }
+    }
+
+    /// <summary>Rejects a request that does not conform before letting the test answer it.</summary>
+    private MockResponse Answer(ReceivedRequest received)
+    {
+        if (!ValidateSchema)
+        {
+            return Respond(received);
+        }
+
+        var failures = SystemOneSchema.Validate(received.Body);
+
+        if (failures.Count == 0)
+        {
+            return Respond(received);
+        }
+
+        lock (Requests)
+        {
+            SchemaFailures.AddRange(failures);
+        }
+
+        return new MockResponse(422, SystemOneSchema.ToValidationBody(failures));
     }
 
     private static int FindFreePort()

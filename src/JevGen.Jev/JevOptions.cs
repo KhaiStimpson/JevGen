@@ -51,9 +51,23 @@ public static class JevModel
     /// <summary>The newest generally available Jev model.</summary>
     public const string Latest = "jev-latest";
 
-    /// <summary>The model optimised for low latency.</summary>
+    /// <summary>
+    /// The model optimised for low latency.
+    /// </summary>
+    /// <remarks>
+    /// <strong>No host currently publishes this tier.</strong> TypeSafe lists one general-purpose
+    /// System One model, and OpenRouter serves <c>~typesafe/jev-latest</c> and pinned
+    /// <c>typesafe/jev-1.13</c> builds with no fast or pro variant. A provider asked for it fails
+    /// with a message saying so, rather than sending an identifier the host will reject. The
+    /// constant is kept so a contract written against it keeps compiling if the tier appears.
+    /// </remarks>
     public const string Fast = "jev-fast";
 
-    /// <summary>The model optimised for judgement quality.</summary>
+    /// <summary>
+    /// The model optimised for judgement quality.
+    /// </summary>
+    /// <remarks>
+    /// <strong>No host currently publishes this tier.</strong> See <see cref="Fast"/>.
+    /// </remarks>
     public const string Pro = "jev-pro";
 }
