@@ -10,8 +10,8 @@ dotnet add package JevGen.Providers.TypeSafe --prerelease
 `JevGen` brings the source generator and analyzers with it as analyzer assets. You do not
 reference them separately.
 
-`--prerelease` is required while the current release is `1.0.0-preview.1`; NuGet skips prerelease
-versions otherwise. Use `--version 1.0.0-preview.1` to pin instead.
+`--prerelease` is required while the current release is `1.0.0-preview.2`; NuGet skips prerelease
+versions otherwise. Use `--version 1.0.0-preview.2` to pin instead.
 
 Requires .NET 10 or later and C# 11 or later.
 

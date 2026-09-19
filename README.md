@@ -79,9 +79,9 @@ dotnet add package JevGen --prerelease
 dotnet add package JevGen.Providers.TypeSafe --prerelease   # or JevGen.Providers.OpenRouter
 ```
 
-`--prerelease` is required: the current release is `1.0.0-preview.1`, and NuGet ignores
+`--prerelease` is required: the current release is `1.0.0-preview.2`, and NuGet ignores
 prerelease versions unless you ask for them. Pin the version instead if you prefer:
-`--version 1.0.0-preview.1`.
+`--version 1.0.0-preview.2`.
 
 The source generator and analyzers flow with `JevGen` as analyzer assets; there is nothing else
 to install.
@@ -90,6 +90,24 @@ to install.
 builder.Services.AddTypeSafeJev(options => options.ApiKey = configuration["TypeSafe:ApiKey"]);
 builder.Services.AddJevClient<ITicketAI>();
 ```
+
+Or through OpenRouter, which needs no early access:
+
+```csharp
+builder.Services.AddOpenRouterJev(options =>
+{
+    options.ApiKey = configuration["OpenRouter:ApiKey"];
+    options.Model = JevModel.Latest;                    // ~typesafe/jev-latest
+    // options.Model = "typesafe/jev-1.13-20260917";    // or pin a build
+});
+
+builder.Services.AddJevClient<ITicketAI>().UseOpenRouter();
+```
+
+Jev is a decisions model, so it is served on its own endpoint rather than through
+chat/completions — the provider handles that. See
+[provider configuration](docs/provider-configuration.md#endpoints-and-models) for the endpoints
+each host uses and the identifiers `JevModel.Latest` resolves to.
 
 ---
 
@@ -210,7 +228,7 @@ Requires the .NET 10 SDK.
 
 ## Status
 
-Pre-1.0, published on nuget.org as `1.0.0-preview.1`. The public API may still change; see
+Pre-1.0, published on nuget.org as `1.0.0-preview.2`. The public API may still change; see
 [docs/architecture.md](docs/architecture.md#breaking-change-strategy) for the versioning policy.
 
 ## Licence

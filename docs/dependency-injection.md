@@ -53,7 +53,7 @@ builder.Services.AddJevClient<ITicketAI>()
     .UseTypeSafe()
     .FallbackToOpenRouter()
     .FallbackWhenConfidenceBelow(0.60)
-    .UseModel("jev-pro")
+    .UseModel(JevModel.Latest)
     .ConfigureProvider("openrouter", options => options["providerOrder"] = "typesafe");
 ```
 

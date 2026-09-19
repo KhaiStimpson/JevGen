@@ -49,9 +49,12 @@ Keeping the probability rather than a boolean is what makes this possible at all
 
 ## Wire shape
 
-```text
-type: noul
-question: Does this ticket require urgent attention?
+```json
+{ "type": "noul", "instructions": "Does this ticket require urgent attention?" }
+```
+
+```json
+{ "type": "noul", "noul": 0.14 }
 ```
 
 The provider answers with a probability. A response without one is rejected rather than
