@@ -43,19 +43,6 @@ path to it — `alpha/decisions` for OpenRouter, `v1/systemone` for TypeSafe —
 that already carries a path, such as `https://openrouter.ai/api/v1/`, produces a URL neither
 host serves. Leave it unset unless you are pointing at a gateway.
 
-## `OpenRouter does not host a 'jev-fast' variant of Jev`
-
-`JevModel.Fast` and `JevModel.Pro` name tiers no host currently publishes. Use
-`JevModel.Latest`, or name a build explicitly:
-
-```csharp
-options.Model = "typesafe/jev-1.13-20260917";
-```
-
-The alternative — sending an invented identifier and letting the host reject it — is what made
-every preview.1 call fail with an unexplained 404. See
-[provider configuration](provider-configuration.md#endpoints-and-models).
-
 ## Serialization fails at run time
 
 **Symptom:** `EvaluationSerializationException: No JSON serialization metadata is available`.

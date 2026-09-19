@@ -270,43 +270,9 @@ public sealed class ProviderIntegrationTests
     }
 
     /// <summary>
-    /// A model tier no host publishes fails before a request leaves the process. Sending an
-    /// invented identifier would come back as an opaque 404, which is exactly what
-    /// 1.0.0-preview.1 did for every call.
+    /// Anything that is not a <see cref="JevModel"/> alias is the caller naming a model, and is
+    /// sent unchanged. That is how a build is pinned.
     /// </summary>
-    [Theory]
-    [InlineData(JevModel.Fast)]
-    [InlineData(JevModel.Pro)]
-    public async Task AModelTierNoHostPublishesFailsWithAMessageThatSaysSo(string model)
-    {
-        await using var server = new MockJevServer
-        {
-            Respond = _ => MockJevServer.MockResponse.Json(RouteResponse),
-        };
-
-        var services = new ServiceCollection();
-        services.AddJevGen(options => options.ValidateOnStart = false);
-
-        services.AddOpenRouterJev(options =>
-        {
-            options.ApiKey = "or-key";
-            options.BaseAddress = server.BaseAddress;
-            options.Model = model;
-        });
-
-        services.AddJevClient<ITicketAI>().UseOpenRouter();
-
-        await using var provider = services.BuildServiceProvider();
-
-        var exception = await Assert.ThrowsAsync<EvaluationProviderException>(
-            () => provider.GetRequiredService<ITicketAI>().RouteAsync(SampleTicket));
-
-        Assert.Contains("does not host", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("~typesafe/jev-latest", exception.Message, StringComparison.Ordinal);
-        Assert.Empty(server.Requests);
-    }
-
-    /// <summary>An explicitly named build is the caller's choice and is passed through.</summary>
     [Fact]
     public async Task AnExplicitModelIdentifierIsSentUnchanged()
     {

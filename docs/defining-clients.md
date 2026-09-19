@@ -27,10 +27,10 @@ Rules:
 
 ```csharp
 [JevClient(
-    Name = "TicketRouter",   // the name used in telemetry and audit records
-    Version = "2",           // a contract version, for auditing and rollout tracking
-    Model = "jev-pro",       // a model override for every method
-    Provider = "openrouter")] // a provider override for every method
+    Name = "TicketRouter",                  // the name used in telemetry and audit records
+    Version = "2",                          // a contract version, for auditing and rollout tracking
+    Model = "typesafe/jev-1.13-20260917",   // a model override for every method
+    Provider = "openrouter")]               // a provider override for every method
 public interface ITicketAI;
 ```
 

@@ -71,22 +71,9 @@ public sealed class OpenRouterJevProvider(
     /// version, and <c>typesafe/jev-1.13-20260917</c> a pinned build. Anything else is passed
     /// through untouched, so a pin can be named directly.
     /// </remarks>
-    /// <exception cref="EvaluationProviderException">
-    /// A latency or quality tier was asked for. OpenRouter lists no such variant, and sending an
-    /// invented identifier would fail as an opaque 404.
-    /// </exception>
     protected override string ResolveModel(string? requested) => (requested ?? Options.Model) switch
     {
         JevModel.Latest => LatestModel,
-
-        JevModel.Fast or JevModel.Pro => throw new EvaluationProviderException(
-            $"OpenRouter does not host a '{requested ?? Options.Model}' variant of Jev. It serves " +
-            $"'{LatestModel}' and pinned builds such as 'typesafe/jev-1.13-20260917'. Use " +
-            $"{nameof(JevModel)}.{nameof(JevModel.Latest)}, or name a build explicitly.")
-        {
-            Provider = ProviderName,
-        },
-
         var explicitModel => explicitModel,
     };
 

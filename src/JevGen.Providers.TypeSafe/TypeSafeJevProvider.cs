@@ -15,16 +15,24 @@ public sealed class TypeSafeJevOptions : JevOptions
 /// The first-party adapter for calling the TypeSafe Jev API directly.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Hosting is separate from semantics: a contract written against Jev runs identically here,
-/// through OpenRouter, or against an internal gateway. Only authentication, addressing and
-/// model naming differ, and all three live in this class.
-/// </remarks>
-/// <remarks>
+/// through OpenRouter, or against an internal gateway. Only authentication and addressing
+/// differ, and both live in this class.
+/// </para>
+/// <para>
+/// Model naming does not differ, which is why <c>ResolveModel</c> is not overridden:
+/// <see cref="JevModel.Latest"/> is <c>jev-latest</c>, the SDK's own default and already what
+/// this API expects. TypeSafe names models in its own namespace, not OpenRouter's;
+/// <c>GET /v1/models</c> lists what else it accepts.
+/// </para>
+/// <para>
 /// <strong>Unverified against the live service.</strong> The endpoint and model naming here are
 /// taken from the source of the official <c>typesafe_sdk</c> 0.7.0 Python package, whose
 /// <c>prepare_system_one</c> posts <c>{state, model, questions}</c> to <c>/v1/systemone</c> on
 /// <c>https://api.typesafe.ai</c>. Reaching the API to confirm it needs an early-access key.
 /// The OpenRouter provider, by contrast, is verified against the live decisions endpoint.
+/// </para>
 /// </remarks>
 public sealed class TypeSafeJevProvider(
     HttpClient httpClient,
@@ -47,29 +55,6 @@ public sealed class TypeSafeJevProvider(
     /// which needs an early-access key.
     /// </remarks>
     protected override string EvaluatePath => "v1/systemone";
-
-    /// <summary>Translates a JevGen model alias into TypeSafe's identifier for it.</summary>
-    /// <remarks>
-    /// TypeSafe names models in its own namespace, not OpenRouter's: <c>jev-latest</c> is the
-    /// SDK's own default and is already what the API expects, so the alias passes straight
-    /// through. <c>GET /v1/models</c> lists what else is accepted.
-    /// </remarks>
-    /// <exception cref="EvaluationProviderException">
-    /// A latency or quality tier was asked for. TypeSafe publishes no such variant.
-    /// </exception>
-    protected override string ResolveModel(string? requested) => (requested ?? Options.Model) switch
-    {
-        JevModel.Latest => "jev-latest",
-
-        JevModel.Fast or JevModel.Pro => throw new EvaluationProviderException(
-            $"TypeSafe does not publish a '{requested ?? Options.Model}' variant of Jev. Use " +
-            $"{nameof(JevModel)}.{nameof(JevModel.Latest)}, or name a model from GET /v1/models.")
-        {
-            Provider = ProviderName,
-        },
-
-        var explicitModel => explicitModel,
-    };
 
     /// <inheritdoc />
     protected override void PrepareRequest(HttpRequestMessage request, TypeSafeJevOptions options)

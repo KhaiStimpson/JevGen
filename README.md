@@ -235,6 +235,11 @@ Pre-1.0, published on nuget.org as `1.0.0-preview.2`. The public API may still c
 does not define, and every OpenRouter call failed with `404: Not Found`. `1.0.0-preview.2`
 corrects the schema and the endpoints. **Upgrade; preview.1 does not work.**
 
+`JevModel.Fast` and `JevModel.Pro` are gone with it. They named latency and quality tiers no
+host publishes, so a contract that used one could only ever fail at run time; removing them
+makes that a compile error instead. `JevModel.Latest` remains, and any other identifier is sent
+to the host unchanged, which is how a build is pinned.
+
 ## Licence
 
 MIT.

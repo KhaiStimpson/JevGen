@@ -55,11 +55,9 @@ marker for an alias rather than a version — `typesafe/jev-1.13` is a version, 
 `GET /api/v1/models` listing; its modality is `text->decisions`. On TypeSafe, `GET /v1/models`
 lists what that host accepts.
 
-> **`JevModel.Fast` and `JevModel.Pro` are not currently served by any host.** Neither TypeSafe
-> nor OpenRouter publishes a latency or quality tier. Asking for one fails with a message saying
-> so, before a request is sent — a provider that quietly sent an invented identifier instead
-> would return an opaque 404. The constants remain so a contract that names one keeps compiling
-> if the tiers appear.
+`JevModel.Latest` is the only alias, because Jev has one generally available model. No host
+publishes a latency or quality tier, so there is nothing else to name portably. If tiers appear,
+aliases for them will be added.
 
 > **The TypeSafe endpoint is unverified against the live service.** Its path and model naming are
 > read from the source of the official `typesafe_sdk` 0.7.0 Python package, whose
