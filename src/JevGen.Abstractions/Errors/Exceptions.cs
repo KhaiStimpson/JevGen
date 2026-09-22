@@ -79,6 +79,31 @@ public sealed class EvaluationRateLimitException : EvaluationProviderException
     public override bool IsTransient => true;
 }
 
+/// <summary>
+/// The provider was not called because its circuit breaker is open after repeated failures.
+/// </summary>
+/// <remarks>
+/// An open circuit is exactly the situation fallback exists for, so this is transient: the
+/// runtime moves on to the next configured provider instead of failing the evaluation.
+/// </remarks>
+public sealed class EvaluationCircuitOpenException : EvaluationProviderException
+{
+    /// <summary>Creates a circuit-open exception.</summary>
+    public EvaluationCircuitOpenException() : base("The provider circuit is open.") { }
+
+    /// <summary>Creates a circuit-open exception with a message.</summary>
+    public EvaluationCircuitOpenException(string message) : base(message) { }
+
+    /// <summary>Creates a circuit-open exception with a message and inner cause.</summary>
+    public EvaluationCircuitOpenException(string message, Exception? innerException) : base(message, innerException) { }
+
+    /// <summary>When the circuit will next let a probe request through, when known.</summary>
+    public DateTimeOffset? OpenUntil { get; init; }
+
+    /// <inheritdoc />
+    public override bool IsTransient => true;
+}
+
 /// <summary>The provider rejected the credentials supplied for the request.</summary>
 public sealed class EvaluationAuthenticationException : EvaluationProviderException
 {

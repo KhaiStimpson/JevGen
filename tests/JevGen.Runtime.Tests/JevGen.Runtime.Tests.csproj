@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/JevGen.Policies/JevGen.Policies.csproj" />
     <ProjectReference Include="../../src/JevGen.Testing/JevGen.Testing.csproj" />
     <ProjectReference Include="../../src/JevGen.Jev/JevGen.Jev.csproj" />
+    <ProjectReference Include="../../src/JevGen.OpenTelemetry/JevGen.OpenTelemetry.csproj" />
   </ItemGroup>
 
 </Project>

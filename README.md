@@ -115,7 +115,7 @@ each host uses and the identifiers `JevModel.Latest` resolves to.
 
 | | |
 |---|---|
-| **Compile-time contracts** | Twenty diagnostics catch malformed contracts before you run them |
+| **Compile-time contracts** | Twenty-one diagnostics catch malformed contracts before you run them |
 | **One state, many questions** | `[JevEvaluate]` issues every question in a single request |
 | **Provider independence** | The same contract runs on TypeSafe, OpenRouter, a gateway or your own provider |
 | **Native AOT** | No reflection, no dynamic code; the AOT test publishes and executes a native binary in CI |
@@ -194,7 +194,7 @@ the real request construction and the real option mapping.
 - [ASP.NET Core](docs/aspnet-core.md)
 - [Agent routing](docs/agent-routing.md)
 - [Native AOT](docs/native-aot.md)
-- [Compiler diagnostics](docs/diagnostics.md)
+- [Compiler diagnostics](docs/diagnostics.md) · [Runtime errors](docs/errors.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture.md)
 

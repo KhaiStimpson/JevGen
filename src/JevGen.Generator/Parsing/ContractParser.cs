@@ -36,27 +36,50 @@ internal sealed partial class ContractParser
         var interfacePolicy = ParsePolicy(contract, contract.ToDisplay());
         var methods = ImmutableArray.CreateBuilder<MethodModel>();
 
+        // A member that fails to parse has already reported why. Emitting the rest would add a
+        // "does not implement interface member" error on top of it, so nothing is emitted.
+        var failed = !ValidateMembers(contract);
+        var names = new HashSet<string>(StringComparer.Ordinal);
+
         foreach (var member in contract.GetMembers())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (member is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method)
+            // Only abstract instance methods need an implementation; a default interface method
+            // already has one, and the members that are neither are rejected above.
+            if (member is not IMethodSymbol { MethodKind: MethodKind.Ordinary, IsAbstract: true, IsStatic: false } method)
             {
+                continue;
+            }
+
+            if (!names.Add(method.Name))
+            {
+                // Generated members are named after the contract method, so an overload would
+                // collide with them.
+                Report(
+                    JevDiagnostics.UnsupportedContractMember,
+                    method.LocationOf(),
+                    $"{contract.Name}.{method.Name}",
+                    "overloaded methods are not supported; give each question method its own name");
+                failed = true;
                 continue;
             }
 
             var model = ParseMethod(contract, method, interfacePolicy, cancellationToken);
 
-            if (model is not null)
+            if (model is null)
             {
-                methods.Add(model);
+                failed = true;
+                continue;
             }
+
+            methods.Add(model);
         }
 
-        if (methods.Count == 0)
+        if (failed || methods.Count == 0)
         {
-            // Nothing to generate, but the interface is still valid: an empty contract is a
-            // work-in-progress, not an error.
+            // Nothing to generate. An empty contract is a work-in-progress, not an error; an
+            // invalid one has reported its diagnostics.
             return null;
         }
 
@@ -68,6 +91,7 @@ internal sealed partial class ContractParser
             InterfaceName = contract.Name,
             FullyQualifiedInterfaceName = contract.ToFullyQualified(),
             DisplayName = clientAttribute.GetNamedString("Name") ?? contract.Name,
+            NestingPrefix = NestingPrefix(contract),
             IsPublic = contract.DeclaredAccessibility == Accessibility.Public,
             Methods = new EquatableArray<MethodModel>(methods.ToImmutable()),
             ContractVersion = clientAttribute.GetNamedString("Version"),
@@ -75,6 +99,62 @@ internal sealed partial class ContractParser
             Model = clientAttribute.GetNamedString("Model"),
             ProviderOptions = ParseProviderOptions(contract),
         };
+    }
+
+    private static string NestingPrefix(INamedTypeSymbol contract)
+    {
+        var prefix = string.Empty;
+
+        for (var containing = contract.ContainingType; containing is not null; containing = containing.ContainingType)
+        {
+            prefix = containing.Name + "_" + prefix;
+        }
+
+        return prefix;
+    }
+
+    /// <summary>
+    /// Reports members the generated client could not implement: properties, events, static
+    /// abstract members and anything inherited from another interface.
+    /// </summary>
+    private bool ValidateMembers(INamedTypeSymbol contract)
+    {
+        var valid = true;
+
+        foreach (var member in contract.GetMembers())
+        {
+            var reason = member switch
+            {
+                IPropertySymbol { IsAbstract: true } => "properties are not supported; a contract declares question methods only",
+                IEventSymbol { IsAbstract: true } => "events are not supported; a contract declares question methods only",
+                IMethodSymbol { IsAbstract: true, IsStatic: true } => "static abstract members are not supported",
+                _ => null,
+            };
+
+            if (reason is not null)
+            {
+                Report(JevDiagnostics.UnsupportedContractMember, member.LocationOf(), $"{contract.Name}.{member.Name}", reason);
+                valid = false;
+            }
+        }
+
+        foreach (var inherited in contract.AllInterfaces)
+        {
+            foreach (var member in inherited.GetMembers())
+            {
+                if (member.IsAbstract && !member.IsStatic && member is not IMethodSymbol { MethodKind: not MethodKind.Ordinary })
+                {
+                    Report(
+                        JevDiagnostics.UnsupportedContractMember,
+                        contract.LocationOf(),
+                        $"{inherited.Name}.{member.Name}",
+                        $"'{contract.Name}' inherits it from '{inherited.ToDisplay()}'; declare question methods on the [JevClient] interface itself");
+                    valid = false;
+                }
+            }
+        }
+
+        return valid;
     }
 
     private MethodModel? ParseMethod(

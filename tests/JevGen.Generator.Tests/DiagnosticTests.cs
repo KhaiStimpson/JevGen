@@ -288,6 +288,92 @@ public sealed class DiagnosticTests
             }
             """));
 
+    [Theory]
+    [InlineData("""
+        [JevClient]
+        public interface ITicketAI
+        {
+            [JevNoul("Is it urgent?")]
+            Task<NoulResult> CheckAsync(Ticket ticket, CancellationToken cancellationToken = default);
+
+            [JevNoul("Is it spam?")]
+            Task<NoulResult> CheckAsync(Ticket ticket, [Context("channel")] string channel, CancellationToken cancellationToken = default);
+        }
+        """)]
+    [InlineData("""
+        public interface IBase
+        {
+            [JevNoul("Is it spam?")]
+            Task<NoulResult> SpamAsync(Ticket ticket, CancellationToken cancellationToken = default);
+        }
+
+        [JevClient]
+        public interface ITicketAI : IBase
+        {
+            [JevNoul("Is it urgent?")]
+            Task<NoulResult> CheckAsync(Ticket ticket, CancellationToken cancellationToken = default);
+        }
+        """)]
+    [InlineData("""
+        [JevClient]
+        public interface ITicketAI
+        {
+            string Name { get; }
+
+            [JevNoul("Is it urgent?")]
+            Task<NoulResult> CheckAsync(Ticket ticket, CancellationToken cancellationToken = default);
+        }
+        """)]
+    public void JEV021_UnsupportedContractMember(string body)
+    {
+        var result = GeneratorHarness.Run(TestContracts.Wrap(body));
+
+        Assert.Contains("JEV021", result.GeneratorDiagnostics.Select(d => d.Id));
+
+        // Reported instead of, not on top of, "does not implement interface member".
+        Assert.DoesNotContain(result.Sources.Keys, key => key.Contains("ITicketAI", StringComparison.Ordinal));
+        Assert.DoesNotContain("CS0535", result.Errors.Select(d => d.Id));
+    }
+
+    [Fact]
+    public void DefaultInterfaceMethodsAreLeftAlone()
+    {
+        var result = GeneratorHarness.Run(TestContracts.Wrap("""
+            [JevClient]
+            public interface ITicketAI
+            {
+                [JevNoul("Is it urgent?")]
+                Task<NoulResult> IsUrgentAsync(Ticket ticket, CancellationToken cancellationToken = default);
+
+                async Task<bool> IsDefinitelyUrgentAsync(Ticket ticket, CancellationToken cancellationToken = default)
+                    => (await IsUrgentAsync(ticket, cancellationToken)).Value(0.9);
+            }
+            """));
+
+        Assert.DoesNotContain("JEV021", result.GeneratorDiagnostics.Select(d => d.Id));
+        Assert.DoesNotContain("JEV014", result.GeneratorDiagnostics.Select(d => d.Id));
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void OneInvalidMethodSuppressesTheWholeClient()
+    {
+        var result = GeneratorHarness.Run(TestContracts.Wrap("""
+            [JevClient]
+            public interface ITicketAI
+            {
+                [JevNoul("Is it urgent?")]
+                Task<NoulResult> IsUrgentAsync(Ticket ticket, CancellationToken cancellationToken = default);
+
+                [JevChoice("Route it.")]
+                Task<string> RouteAsync(Ticket ticket, CancellationToken cancellationToken = default);
+            }
+            """));
+
+        Assert.Contains("JEV002", result.GeneratorDiagnostics.Select(d => d.Id));
+        Assert.DoesNotContain("CS0535", result.Errors.Select(d => d.Id));
+    }
+
     [Fact]
     public void InvalidContractsDoNotEmitBrokenCode()
     {

@@ -132,9 +132,99 @@ public sealed class ResilienceTests
         await Assert.ThrowsAsync<EvaluationProviderException>(() => client.RouteAsync(SampleTicket));
         await Assert.ThrowsAsync<EvaluationProviderException>(() => client.RouteAsync(SampleTicket));
 
-        var blocked = await Assert.ThrowsAsync<EvaluationProviderException>(() => client.RouteAsync(SampleTicket));
+        var blocked = await Assert.ThrowsAsync<EvaluationCircuitOpenException>(() => client.RouteAsync(SampleTicket));
 
         Assert.Contains("circuit", blocked.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(blocked.IsTransient);
+        Assert.NotNull(blocked.OpenUntil);
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task AnOpenCircuitFallsBackToTheNextProvider()
+    {
+        var flaky = new FlakyProvider(failuresBeforeSuccess: int.MaxValue);
+        var healthy = new FakeProvider("healthy") { SelectedOption = "sales" };
+
+        var services = new ServiceCollection();
+
+        services.AddJevGen(options => options.ValidateOnStart = false)
+            .AddResilience(options =>
+            {
+                options.MaxRetries = 0;
+                options.CircuitBreakerThreshold = 1;
+                options.CircuitBreakerDuration = TimeSpan.FromMinutes(1);
+            });
+
+        services.AddSingleton<IJevProvider>(flaky);
+        services.AddSingleton<IJevProvider>(healthy);
+        services.AddJevClient<ITicketAI>().UseProvider("flaky").FallbackTo("healthy");
+
+        await using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<ITicketAI>();
+
+        // The first call trips the breaker and falls back; the second skips the open circuit
+        // without calling the failing provider, and still falls back rather than failing.
+        await client.RouteAsync(SampleTicket);
+        var result = await client.RouteAsync(SampleTicket);
+
+        Assert.Equal(Department.Sales, result.Value);
+        Assert.Equal(1, flaky.CallCount);
+        Assert.Equal(2, healthy.CallCount);
+    }
+
+    [Fact]
+    public async Task AHalfOpenCircuitLetsExactlyOneProbeThrough()
+    {
+        var provider = new FlakyProvider(failuresBeforeSuccess: int.MaxValue);
+
+        await using var services = Build(provider, options =>
+        {
+            options.MaxRetries = 0;
+            options.CircuitBreakerThreshold = 1;
+            options.CircuitBreakerDuration = TimeSpan.FromMilliseconds(500);
+        });
+
+        var client = services.GetRequiredService<ITicketAI>();
+
+        await Assert.ThrowsAsync<EvaluationProviderException>(() => client.RouteAsync(SampleTicket));
+        await Task.Delay(TimeSpan.FromMilliseconds(600));
+
+        // The first caller after the window is the probe; it fails, which keeps the circuit
+        // open, so the callers behind it never reach the provider.
+        await Assert.ThrowsAsync<EvaluationProviderException>(() => client.RouteAsync(SampleTicket));
+        await Assert.ThrowsAsync<EvaluationCircuitOpenException>(() => client.RouteAsync(SampleTicket));
+        await Assert.ThrowsAsync<EvaluationCircuitOpenException>(() => client.RouteAsync(SampleTicket));
+
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task AddingResilienceTwiceDoesNotNestRetries()
+    {
+        var provider = new FlakyProvider(failuresBeforeSuccess: int.MaxValue);
+
+        var services = new ServiceCollection();
+        var builder = services.AddJevGen(options => options.ValidateOnStart = false);
+
+        builder.AddResilience(options =>
+        {
+            options.MaxRetries = 1;
+            options.BaseDelay = TimeSpan.FromMilliseconds(1);
+            options.CircuitBreakerThreshold = 0;
+        });
+        builder.AddResilience();
+
+        services.AddSingleton<IJevProvider>(provider);
+        services.AddJevClient<ITicketAI>().AddResilience();
+
+        await using var built = services.BuildServiceProvider();
+
+        Assert.Single(built.GetServices<IEvaluationFilter>().OfType<ResilienceEvaluationFilter>());
+
+        await Assert.ThrowsAsync<EvaluationProviderException>(
+            () => built.GetRequiredService<ITicketAI>().RouteAsync(SampleTicket));
+
         Assert.Equal(2, provider.CallCount);
     }
 

@@ -79,7 +79,10 @@ public static class JevGenJson
 
         try
         {
-            return options.TypeInfoResolver?.GetTypeInfo(type, options);
+            // Ask the options rather than the resolver: the options cache what they resolve,
+            // while calling the resolver directly builds fresh metadata — reflection included —
+            // on every call, and composite state parts are looked up on every evaluation.
+            return options.TryGetTypeInfo(type, out var typeInfo) ? typeInfo : null;
         }
         catch (InvalidOperationException)
         {

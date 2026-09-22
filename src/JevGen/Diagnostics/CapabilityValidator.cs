@@ -71,18 +71,27 @@ public static class CapabilityValidator
 
         foreach (var descriptor in descriptors)
         {
-            options.Clients.TryGetValue(descriptor.ContractType.FullName ?? descriptor.Name, out var clientConfiguration);
-
-            var chain = ResolveChain(descriptor, providers, options, clientConfiguration);
-
-            if (chain.Count == 0)
-            {
-                continue;
-            }
+            var clientConfiguration = options.FindClient(descriptor.ContractType, descriptor.Name);
 
             foreach (var method in descriptor.Methods)
             {
+                // The chain is resolved per method, because a method can route itself to a
+                // different provider than the rest of its contract.
+                var chain = ResolveChain(method.Provider ?? descriptor.Provider, providers, options, clientConfiguration);
+
+                if (chain.Count == 0)
+                {
+                    continue;
+                }
+
                 var required = method.RequiredCapabilities;
+
+                // A model chosen in code is sent with every request, so the provider has to
+                // support selecting one, just as it would for a model declared by attribute.
+                if (clientConfiguration?.Model is not null)
+                {
+                    required |= JevCapabilitySet.ModelSelection;
+                }
 
                 // A contract is satisfiable when any provider in its chain can serve it.
                 var satisfied = chain.Any(provider => provider.Capabilities.Missing(required) == JevCapabilitySet.None);
@@ -138,25 +147,45 @@ public static class CapabilityValidator
         };
     }
 
+    /// <summary>
+    /// Resolves the providers the runtime would try, in the order it would try them.
+    /// </summary>
+    /// <remarks>
+    /// This mirrors the runtime's precedence — programmatic selection by type, then by name, then
+    /// the attribute, then the default — so start-up validation checks the provider that will
+    /// actually serve the contract. Providers that are not registered are skipped here; the
+    /// runtime reports them with a clearer message on first use.
+    /// </remarks>
     private static List<IJevProvider> ResolveChain(
-        JevClientDescriptor descriptor,
+        string? declaredProvider,
         IJevProviderResolver providers,
         JevGenOptions options,
         JevClientConfiguration? clientConfiguration)
     {
         var chain = new List<IJevProvider>();
-        var primaryName = clientConfiguration?.Provider ?? descriptor.Provider ?? options.DefaultProvider;
 
-        if (primaryName is not null)
+        if (clientConfiguration?.ProviderType is { } providerType)
         {
-            if (providers.TryResolve(primaryName, out var named))
+            if (JevProviderNames.TryResolve(providerType, providers, out var typed))
             {
-                chain.Add(named);
+                chain.Add(typed);
             }
         }
-        else if (providers.Default is { } fallback)
+        else
         {
-            chain.Add(fallback);
+            var primaryName = clientConfiguration?.Provider ?? declaredProvider ?? options.DefaultProvider;
+
+            if (primaryName is not null)
+            {
+                if (providers.TryResolve(primaryName, out var named))
+                {
+                    chain.Add(named);
+                }
+            }
+            else if (providers.Default is { } fallback)
+            {
+                chain.Add(fallback);
+            }
         }
 
         if (clientConfiguration is not null)
@@ -164,6 +193,14 @@ public static class CapabilityValidator
             foreach (var name in clientConfiguration.FallbackProviders)
             {
                 if (providers.TryResolve(name, out var provider) && !chain.Contains(provider))
+                {
+                    chain.Add(provider);
+                }
+            }
+
+            foreach (var type in clientConfiguration.FallbackProviderTypes)
+            {
+                if (JevProviderNames.TryResolve(type, providers, out var provider) && !chain.Contains(provider))
                 {
                     chain.Add(provider);
                 }

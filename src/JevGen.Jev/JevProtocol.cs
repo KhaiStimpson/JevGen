@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using JevGen.Providers;
 
@@ -13,6 +14,19 @@ namespace JevGen.Jev;
 /// </remarks>
 public static class JevProtocol
 {
+    /// <summary>
+    /// Wire payloads for question definitions, built once per definition.
+    /// </summary>
+    /// <remarks>
+    /// Generated clients hold their definitions in static fields and hand the same instances to
+    /// every request, so the translation — option maps, generated score rubrics — only needs to
+    /// happen once. Definitions are immutable, and the table is keyed by reference and holds its
+    /// keys weakly, so a hand-built definition is never served a stale payload or kept alive.
+    /// </remarks>
+    private static readonly ConditionalWeakTable<JevQuestionDefinition, JevQuestionPayload> Payloads = new();
+
+    private static readonly ConditionalWeakTable<JevQuestionDefinition, StrongBox<JevScoreScale>> Scales = new();
+
     /// <summary>Builds the Jev request payload for a canonical provider request.</summary>
     public static JevRequestPayload ToPayload(JevProviderRequest request, string? model)
     {
@@ -22,7 +36,7 @@ public static class JevProtocol
 
         foreach (var question in request.Questions)
         {
-            questions[question.Id] = ToQuestion(question);
+            questions[question.Id] = Payloads.GetValue(question, static definition => ToQuestion(definition));
         }
 
         return new JevRequestPayload
@@ -55,7 +69,7 @@ public static class JevProtocol
                         StringComparer.Ordinal));
 
             case JevQuestionKind.Score:
-                return JevQuestionPayload.Score(question.Prompt, JevScoreScale.For(question).Criteria);
+                return JevQuestionPayload.Score(question.Prompt, ScaleOf(question).Criteria);
 
             default:
                 throw new EvaluationSerializationException(
@@ -147,7 +161,7 @@ public static class JevProtocol
 
             case JevQuestionKind.Score:
                 var level = answer.Score ?? throw Malformed(question, "a score", providerName, requestId);
-                var scale = JevScoreScale.For(question);
+                var scale = ScaleOf(question);
 
                 return new ScoreQuestionResult(
                     question.Id,
@@ -158,6 +172,9 @@ public static class JevProtocol
                 throw Malformed(question, "a recognised answer", providerName, requestId);
         }
     }
+
+    private static JevScoreScale ScaleOf(JevQuestionDefinition question)
+        => Scales.GetValue(question, static definition => new StrongBox<JevScoreScale>(JevScoreScale.For(definition))).Value;
 
     /// <summary>
     /// How many levels the host actually scored against.

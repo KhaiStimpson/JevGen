@@ -59,5 +59,24 @@ public interface ITicketAI
     Task<Decision<Department>> DecideAsync(Ticket ticket, CancellationToken cancellationToken = default);
 }
 
+/// <summary>A contract whose display name differs from its type name.</summary>
+[JevClient(Name = "TicketRouter")]
+public interface INamedTicketAI
+{
+    [JevChoice("Which department should handle this ticket?")]
+    Task<ChoiceResult<Department>> RouteAsync(Ticket ticket, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Shares its simple name with <see cref="ITicketAI"/>, in another namespace.</summary>
+public static class Elsewhere
+{
+    [JevClient]
+    public interface ITicketAI
+    {
+        [JevChoice("Which department should handle this ticket?")]
+        Task<ChoiceResult<Department>> RouteAsync(Ticket ticket, CancellationToken cancellationToken = default);
+    }
+}
+
 [JsonSerializable(typeof(Ticket))]
 internal sealed partial class TestJsonContext : JsonSerializerContext;

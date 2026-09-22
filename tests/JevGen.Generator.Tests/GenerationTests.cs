@@ -52,6 +52,43 @@ public sealed class GenerationTests
     }
 
     [Fact]
+    public void NestedContractsSharingANameGenerateSeparateClients()
+    {
+        var result = GeneratorHarness.Run(TestContracts.Wrap("""
+            [JevClient]
+            public interface ITicketAI
+            {
+                [JevNoul("Is it urgent?")]
+                Task<NoulResult> IsUrgentAsync(Ticket ticket, CancellationToken cancellationToken = default);
+            }
+
+            public static class Elsewhere
+            {
+                [JevClient]
+                public interface ITicketAI
+                {
+                    [JevNoul("Is it spam?")]
+                    Task<NoulResult> IsSpamAsync(Ticket ticket, CancellationToken cancellationToken = default);
+                }
+            }
+            """));
+
+        Assert.Empty(result.GeneratorDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(result.Errors);
+        Assert.Contains(result.Sources.Keys, key => key.Contains("Elsewhere.ITicketAI", StringComparison.Ordinal));
+        Assert.Contains("Elsewhere_ITicketAI_JevGenClient", result.Source("Elsewhere.ITicketAI"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RequestsIdentifyTheirContractByType()
+    {
+        var source = GeneratorHarness.Run(TestContracts.Wrap(TestContracts.Choice)).Source("ITicketAI");
+
+        // The display name can be renamed or shared; the type is what configuration matches on.
+        Assert.Contains("ContractType = typeof(global::Support.ITicketAI),", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GeneratedClientTargetsTheRuntimeAbstractionOnly()
     {
         var source = GeneratorHarness.Run(TestContracts.Wrap(TestContracts.Choice)).Source("ITicketAI");

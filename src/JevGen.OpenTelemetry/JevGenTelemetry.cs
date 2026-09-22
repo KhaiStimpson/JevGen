@@ -51,7 +51,7 @@ public static class JevGenTelemetry
         Meter.CreateHistogram<int>("jevgen.questions", "{question}", "Questions per evaluation.");
 
     internal static readonly Counter<long> Retries =
-        Meter.CreateCounter<long>("jevgen.retries", "{attempt}", "Provider attempts beyond the first.");
+        Meter.CreateCounter<long>("jevgen.retries", "{attempt}", "Retries of the same provider, beyond its first attempt.");
 
     internal static readonly Counter<long> Fallbacks =
         Meter.CreateCounter<long>("jevgen.fallbacks", "{fallback}", "Fallbacks to a secondary provider.");

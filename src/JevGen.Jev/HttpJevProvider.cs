@@ -18,6 +18,8 @@ namespace JevGen.Jev;
 public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHealth
     where TOptions : JevOptions
 {
+    private static readonly string[] RequestIdHeaders = ["x-request-id", "request-id", "x-jev-request-id"];
+
     private readonly IOptionsMonitor<TOptions> _options;
 
     /// <summary>Creates the provider.</summary>
@@ -229,10 +231,7 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
     }
 
     private Uri BuildUri(TOptions options)
-    {
-        var baseAddress = options.BaseAddress ?? HttpClient.BaseAddress ?? DefaultBaseAddress;
-        return new Uri(baseAddress, EvaluatePath);
-    }
+        => JevEndpoint.Combine(options.BaseAddress ?? HttpClient.BaseAddress ?? DefaultBaseAddress, EvaluatePath);
 
     private static void ApplyProviderOptions(HttpRequestMessage message, JevProviderRequest request)
     {
@@ -308,7 +307,7 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
     /// <summary>Reads the host's request-identifier header, when it sets one.</summary>
     protected virtual string? ReadRequestId(HttpResponseMessage response)
     {
-        foreach (var name in new[] { "x-request-id", "request-id", "x-jev-request-id" })
+        foreach (var name in RequestIdHeaders)
         {
             if (response.Headers.TryGetValues(name, out var values))
             {
@@ -327,8 +326,10 @@ public abstract class HttpJevProvider<TOptions> : IJevProvider, IJevProviderHeal
         {
             Options.Validate(Name);
         }
-        catch (EvaluationAuthenticationException exception)
+        catch (JevGenException exception)
         {
+            // Any configuration error, not only a missing key: a probe reports it rather than
+            // throwing out of the health check.
             return new ValueTask<JevProviderHealthResult>(
                 JevProviderHealthResult.Unhealthy(exception.Message, exception));
         }

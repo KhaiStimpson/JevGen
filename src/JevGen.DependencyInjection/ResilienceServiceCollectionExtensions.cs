@@ -19,12 +19,19 @@ public static class JevResilienceExtensions
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Services.AddOptions<JevResilienceOptions>().Configure(configure ?? (static _ => { }));
-        builder.Services.AddSingleton<IEvaluationFilter, ResilienceEvaluationFilter>();
+
+        // Registered once however often this is called: a second filter would nest a second
+        // retry loop inside the first and multiply the attempts.
+        builder.Services.TryAddEnumerableFilter();
 
         return builder;
     }
 
-    /// <summary>Adds resilience, configured for one contract's builder chain.</summary>
+    /// <summary>Adds resilience from one contract's builder chain.</summary>
+    /// <remarks>
+    /// Resilience settings are global: this is a convenience for fluent registration, and the
+    /// settings it configures apply to every contract, not only <typeparamref name="TContract"/>.
+    /// </remarks>
     public static JevClientBuilder<TContract> AddResilience<TContract>(
         this JevClientBuilder<TContract> builder,
         Action<JevResilienceOptions>? configure = null)

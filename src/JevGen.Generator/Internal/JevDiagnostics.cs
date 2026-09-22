@@ -152,4 +152,10 @@ internal static class JevDiagnostics
         "No serializer context declared",
         "This assembly declares JevGen clients but no [assembly: JevJsonContext], so state is serialized by reflection, which is not trim- or Native-AOT-safe",
         DiagnosticSeverity.Info);
+
+    internal static readonly DiagnosticDescriptor UnsupportedContractMember = Create(
+        "JEV021",
+        "Unsupported contract member",
+        "'{0}' cannot be implemented by JevGen: {1}",
+        DiagnosticSeverity.Error);
 }

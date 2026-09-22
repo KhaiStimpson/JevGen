@@ -31,7 +31,7 @@ Tags include `jevgen.contract`, `jevgen.method`, `jevgen.provider`, `jevgen.mode
 | `jevgen.errors` | Counter | Failed evaluations, tagged by error type |
 | `jevgen.confidence` | Histogram | Confidence of returned answers |
 | `jevgen.questions` | Histogram | Questions per evaluation |
-| `jevgen.retries` | Counter | Attempts beyond the first |
+| `jevgen.retries` | Counter | Retries of the same provider made by the resilience filter |
 | `jevgen.fallbacks` | Counter | Fallbacks to a secondary provider |
 | `jevgen.policy.accept` / `.review` / `.reject` | Counter | Policy classifications |
 
