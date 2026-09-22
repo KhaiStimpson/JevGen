@@ -38,6 +38,17 @@ public sealed record EvaluationRequest
     /// <summary>The name of the contract interface this request came from.</summary>
     public required string ClientName { get; init; }
 
+    /// <summary>
+    /// The contract interface this request came from, when known. Generated clients always
+    /// supply it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ClientName"/> is a display name that <c>[JevClient(Name = ...)]</c> can change
+    /// and that two contracts in different namespaces can share, so per-contract configuration
+    /// is matched on this type when it is present, and on the name only for hand-built requests.
+    /// </remarks>
+    public Type? ContractType { get; init; }
+
     /// <summary>The name of the contract method this request came from.</summary>
     public required string MethodName { get; init; }
 

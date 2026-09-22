@@ -132,7 +132,7 @@ public abstract class ChatEvaluationProvider<TOptions> : IJevProvider
 
         var baseAddress = options.BaseAddress ?? HttpClient.BaseAddress ?? DefaultBaseAddress;
 
-        using var message = new HttpRequestMessage(HttpMethod.Post, new Uri(baseAddress, CompletionPath))
+        using var message = new HttpRequestMessage(HttpMethod.Post, Combine(baseAddress, CompletionPath))
         {
             Content = new ByteArrayContent(buffer.ToArray())
             {
@@ -271,9 +271,31 @@ public abstract class ChatEvaluationProvider<TOptions> : IJevProvider
         return trimmed.Length <= 500 ? trimmed : trimmed[..500] + "...";
     }
 
+    private static readonly string[] RequestIdHeaders = ["x-request-id", "request-id", "anthropic-request-id"];
+
+    /// <summary>
+    /// Appends the completion path to a base address, keeping any path the base address carries.
+    /// </summary>
+    /// <remarks>
+    /// Plain <see cref="Uri"/> resolution would replace the last segment of a base address that
+    /// lacks a trailing slash, so a gateway at <c>https://gateway.example.com/openai</c> would be
+    /// called without its <c>/openai</c> prefix.
+    /// </remarks>
+    private static Uri Combine(Uri baseAddress, string relativePath)
+    {
+        if (baseAddress.IsAbsoluteUri && !baseAddress.AbsolutePath.EndsWith('/'))
+        {
+            var builder = new UriBuilder(baseAddress);
+            builder.Path += "/";
+            baseAddress = builder.Uri;
+        }
+
+        return new Uri(baseAddress, relativePath);
+    }
+
     private static string? ReadRequestId(HttpResponseMessage response)
     {
-        foreach (var name in new[] { "x-request-id", "request-id", "anthropic-request-id" })
+        foreach (var name in RequestIdHeaders)
         {
             if (response.Headers.TryGetValues(name, out var values))
             {

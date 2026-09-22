@@ -46,11 +46,14 @@ public sealed class ResilienceEvaluationFilter(
 
         if (settings.CircuitBreakerThreshold > 0 && circuit.IsOpen(settings, out var opensAt))
         {
-            throw new EvaluationProviderException(
+            // Transient, so the runtime falls back to the next provider rather than failing:
+            // skipping a provider known to be down is what the breaker is for.
+            throw new EvaluationCircuitOpenException(
                 $"The circuit for provider '{provider}' is open until {opensAt:O} after " +
                 $"{settings.CircuitBreakerThreshold} consecutive failures.")
             {
                 Provider = provider,
+                OpenUntil = opensAt,
             };
         }
 
@@ -175,13 +178,32 @@ public sealed class ResilienceEvaluationFilter(
 
             opensAt = new DateTimeOffset(openedAt, TimeSpan.Zero) + settings.CircuitBreakerDuration;
 
-            if (DateTimeOffset.UtcNow < opensAt)
+            var now = DateTimeOffset.UtcNow;
+
+            if (now < opensAt)
             {
                 return true;
             }
 
-            // Half-open: let one request through to probe whether the provider has recovered.
-            Interlocked.Exchange(ref _openedAtTicks, 0);
+            // Half-open: let exactly one request through to probe whether the provider has
+            // recovered. The winner re-arms the window, so concurrent callers keep seeing an open
+            // circuit until the probe reports back: success closes it, failure keeps it open.
+            if (Interlocked.CompareExchange(ref _openedAtTicks, now.UtcTicks, openedAt) != openedAt)
+            {
+                var current = Interlocked.Read(ref _openedAtTicks);
+
+                // Zero means a probe already succeeded and closed the circuit in between.
+                if (current == 0)
+                {
+                    opensAt = default;
+                    return false;
+                }
+
+                opensAt = new DateTimeOffset(current, TimeSpan.Zero) + settings.CircuitBreakerDuration;
+                return true;
+            }
+
+            opensAt = now + settings.CircuitBreakerDuration;
             Interlocked.Exchange(ref _consecutiveFailures, settings.CircuitBreakerThreshold - 1);
             return false;
         }

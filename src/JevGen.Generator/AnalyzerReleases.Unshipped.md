@@ -25,3 +25,4 @@ JEV017  | JevGen   | Warning  | Provider capability unsupported
 JEV018  | JevGen   | Warning  | Interface declares questions but is not a JevGen client
 JEV019  | JevGen   | Info     | Method takes no CancellationToken
 JEV020  | JevGen   | Info     | No serializer context declared
+JEV021  | JevGen   | Error    | Unsupported contract member

@@ -53,6 +53,10 @@ public sealed class GuardrailChatClient : DelegatingChatClient
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        // The guardrail and the inner client both read the messages; a lazily produced sequence
+        // must not be enumerated twice.
+        messages = Materialize(messages);
+
         var verdict = await _shouldBlock(messages, cancellationToken).ConfigureAwait(false);
 
         if (verdict.Value(_threshold))
@@ -60,11 +64,7 @@ public sealed class GuardrailChatClient : DelegatingChatClient
             return new ChatResponse(new ChatMessage(ChatRole.Assistant, _blockedResponse))
             {
                 FinishReason = ChatFinishReason.ContentFilter,
-                AdditionalProperties = new AdditionalPropertiesDictionary
-                {
-                    ["jevgen.blocked"] = true,
-                    ["jevgen.blockProbability"] = verdict.Probability,
-                },
+                AdditionalProperties = BlockedProperties(verdict),
             };
         }
 
@@ -77,6 +77,8 @@ public sealed class GuardrailChatClient : DelegatingChatClient
         ChatOptions? options = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        messages = Materialize(messages);
+
         var verdict = await _shouldBlock(messages, cancellationToken).ConfigureAwait(false);
 
         if (verdict.Value(_threshold))
@@ -86,6 +88,7 @@ public sealed class GuardrailChatClient : DelegatingChatClient
             yield return new ChatResponseUpdate(ChatRole.Assistant, _blockedResponse)
             {
                 FinishReason = ChatFinishReason.ContentFilter,
+                AdditionalProperties = BlockedProperties(verdict),
             };
 
             yield break;
@@ -98,6 +101,14 @@ public sealed class GuardrailChatClient : DelegatingChatClient
             yield return update;
         }
     }
+    private static IEnumerable<ChatMessage> Materialize(IEnumerable<ChatMessage> messages)
+        => messages is IReadOnlyCollection<ChatMessage> or ICollection<ChatMessage> ? messages : [.. messages];
+
+    private static AdditionalPropertiesDictionary BlockedProperties(NoulResult verdict) => new()
+    {
+        ["jevgen.blocked"] = true,
+        ["jevgen.blockProbability"] = verdict.Probability,
+    };
 }
 
 /// <summary>Adds JevGen decisions to a <see cref="IChatClient"/> pipeline.</summary>

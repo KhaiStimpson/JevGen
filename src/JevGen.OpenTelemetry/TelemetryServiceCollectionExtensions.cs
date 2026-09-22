@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace JevGen.Telemetry;
 
@@ -19,7 +20,9 @@ public static class TelemetryServiceCollectionExtensions
 
         var builder = services.AddJevGen();
         services.AddOptions<JevGenTelemetryOptions>().Configure(configure);
-        services.AddSingleton<IEvaluationFilter, TelemetryEvaluationFilter>();
+
+        // Registered once however often this is called, so spans and metrics are never doubled.
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IEvaluationFilter, TelemetryEvaluationFilter>());
 
         return builder;
     }

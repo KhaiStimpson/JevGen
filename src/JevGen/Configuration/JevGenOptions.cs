@@ -67,6 +67,74 @@ public sealed class JevGenOptions
 
         return configuration;
     }
+
+    /// <summary>
+    /// Finds the configuration for a contract without creating it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ClientFor"/> keys by the contract's full name, so that is tried first. Keys
+    /// written by hand or bound from configuration are often the bare interface name or the
+    /// <c>[JevClient(Name = ...)]</c> display name, so those still match, exactly first and then
+    /// as the last segment of a namespace- or nesting-qualified key.
+    /// </remarks>
+    internal JevClientConfiguration? FindClient(Type? contractType, string clientName)
+    {
+        if (Clients.Count == 0)
+        {
+            return null;
+        }
+
+        if (contractType is not null)
+        {
+            var fullName = contractType.FullName ?? contractType.Name;
+
+            // Nested contracts have a '+' in their full name; configuration written by hand
+            // usually spells it with a '.'.
+            if (Clients.TryGetValue(fullName, out var byType)
+                || Clients.TryGetValue(fullName.Replace('+', '.'), out byType))
+            {
+                return byType;
+            }
+        }
+
+        if (Clients.TryGetValue(clientName, out var byName))
+        {
+            return byName;
+        }
+
+        if (contractType is not null)
+        {
+            // The type is known, so a key only belongs to it when the key is a trailing part of
+            // its full name: "Outer.ITicketAI" does, "Other.ITicketAI" is a different contract
+            // that happens to share the name.
+            var fullName = (contractType.FullName ?? contractType.Name).Replace('+', '.');
+
+            foreach (var pair in Clients)
+            {
+                if (IsQualifiedFormOf(fullName, pair.Key.Replace('+', '.')))
+                {
+                    return pair.Value;
+                }
+            }
+
+            return null;
+        }
+
+        foreach (var pair in Clients)
+        {
+            if (IsQualifiedFormOf(pair.Key, clientName))
+            {
+                return pair.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsQualifiedFormOf(string key, string name)
+        => key.Length > name.Length
+           && key.EndsWith(name, StringComparison.Ordinal)
+           && key[key.Length - name.Length - 1] is '.' or '+';
 }
 
 /// <summary>

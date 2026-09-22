@@ -22,6 +22,9 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
     private readonly ILogger<EvaluationRuntime> _logger;
     private readonly EvaluationDelegate _pipeline;
 
+    private static readonly IReadOnlyDictionary<string, object?> NoProviderOptions =
+        new System.Collections.ObjectModel.ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>());
+
     /// <summary>Creates the runtime.</summary>
     public EvaluationRuntime(
         IJevProviderResolver providers,
@@ -47,7 +50,15 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
         ArgumentNullException.ThrowIfNull(request);
 
         var options = _options.CurrentValue;
-        var clientConfiguration = FindClientConfiguration(options, request.ClientName);
+        var clientConfiguration = options.FindClient(request.ContractType, request.ClientName);
+
+        // A model chosen in code is explicit programmatic configuration, so it takes precedence
+        // over the one declared by attribute, and applies to every provider in the chain.
+        if (clientConfiguration?.Model is { } configuredModel)
+        {
+            request = request with { Model = configuredModel };
+        }
+
         var candidates = ResolveCandidates(request, options, clientConfiguration);
 
         using var timeoutSource = CreateTimeoutSource(options, cancellationToken, out var effectiveToken);
@@ -165,7 +176,8 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
         {
             if (attempted.Count == 1)
             {
-                throw lastFailure;
+                // Rethrow without resetting the stack trace, which points at the provider.
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(lastFailure);
             }
 
             throw new EvaluationFallbackExhaustedException(
@@ -293,20 +305,6 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
             : throw new JevGenException(
                 $"No JevGen provider of type '{providerType}' is registered. Register it with " +
                 $"AddJevProvider<{providerType.Name}>() before selecting it.");
-
-    private static JevClientConfiguration? FindClientConfiguration(JevGenOptions options, string clientName)
-    {
-        foreach (var pair in options.Clients)
-        {
-            if (string.Equals(pair.Key, clientName, StringComparison.Ordinal)
-                || pair.Key.EndsWith("." + clientName, StringComparison.Ordinal))
-            {
-                return pair.Value;
-            }
-        }
-
-        return null;
-    }
 
     private static EvaluationRequest Scope(
         EvaluationRequest request,
@@ -449,7 +447,7 @@ public sealed class EvaluationRuntime : IEvaluationRuntime
             Model = request.Model,
             ClientName = request.ClientName,
             MethodName = request.MethodName,
-            ProviderOptions = providerOptions ?? new Dictionary<string, object?>(),
+            ProviderOptions = providerOptions ?? NoProviderOptions,
             Metadata = request.Metadata,
         };
 

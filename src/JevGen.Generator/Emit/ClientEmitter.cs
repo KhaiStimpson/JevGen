@@ -293,6 +293,7 @@ internal static partial class ClientEmitter
             }
 
             source.AppendLine($"    ClientName = {SourceBuilder.Literal(client.DisplayName)},");
+            source.AppendLine($"    ContractType = typeof({client.FullyQualifiedInterfaceName}),");
             source.AppendLine($"    MethodName = {SourceBuilder.Literal(method.Name)},");
             source.AppendLine($"    ContractVersion = {SourceBuilder.Literal(client.ContractVersion)},");
             source.AppendLine($"    Model = {SourceBuilder.Literal(method.Model ?? client.Model)},");

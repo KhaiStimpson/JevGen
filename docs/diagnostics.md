@@ -32,6 +32,7 @@ dotnet_diagnostic.JEV019.severity = none
 | [JEV018](#jev018) | Warning | Interface declares questions but is not a JevGen client |
 | [JEV019](#jev019) | Info | Method takes no CancellationToken |
 | [JEV020](#jev020) | Info | No serializer context declared |
+| [JEV021](#jev021) | Error | Unsupported contract member |
 
 ---
 
@@ -291,3 +292,22 @@ internal sealed partial class AppJsonContext : JsonSerializerContext;
 
 Without it, state serialization falls back to reflection. That works on a normal runtime but is
 neither trim- nor Native-AOT-safe. See [native-aot.md](native-aot.md).
+
+---
+
+## JEV021
+
+**Unsupported contract member.**
+
+The generated client implements every member of the contract, so the contract may only declare
+question methods. JevGen reports, rather than generating code that fails to compile:
+
+- properties and events;
+- overloaded methods — each question method needs its own name;
+- members inherited from another interface — declare them on the `[JevClient]` interface itself;
+- static abstract members.
+
+Default interface methods, which already have a body, are allowed and left alone.
+
+When any member of a contract is invalid, no client is generated for it at all, so the only
+errors you see are the ones that say what to change.

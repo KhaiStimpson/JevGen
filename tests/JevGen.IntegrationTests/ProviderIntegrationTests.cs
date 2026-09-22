@@ -122,6 +122,38 @@ public sealed class ProviderIntegrationTests
     }
 
     [Fact]
+    public async Task ABaseAddressPathIsKeptWithoutATrailingSlash()
+    {
+        await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.Json(AssessmentResponse) };
+
+        // A gateway prefix written the way people write it: no trailing slash. Plain Uri
+        // resolution would drop "gateway" and call /v1/systemone.
+        await using var services = BuildTypeSafe(
+            server,
+            options => options.BaseAddress = new Uri(server.BaseAddress, "gateway"));
+
+        await services.GetRequiredService<ITicketAI>().AssessAsync(SampleTicket);
+
+        Assert.Equal("/gateway/v1/systemone", Assert.Single(server.Requests).Path);
+    }
+
+    [Fact]
+    public async Task RepeatedEvaluationsSendIdenticalQuestions()
+    {
+        await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.Json(AssessmentResponse) };
+        await using var services = BuildTypeSafe(server);
+        var client = services.GetRequiredService<ITicketAI>();
+
+        // Question payloads are built once and reused; the second request must not differ.
+        await client.AssessAsync(SampleTicket);
+        var second = await client.AssessAsync(SampleTicket);
+
+        Assert.Equal(2, server.Requests.Count);
+        Assert.Equal(server.Requests[0].Body, server.Requests[1].Body);
+        Assert.Equal(4d, second.Severity.Value, 6);
+    }
+
+    [Fact]
     public async Task TheRequestOnTheWireMatchesTheDesignedShape()
     {
         await using var server = new MockJevServer { Respond = _ => MockJevServer.MockResponse.Json(AssessmentResponse) };

@@ -152,6 +152,13 @@ internal sealed record ClientModel : IEquatable<ClientModel>
 
     public required string DisplayName { get; init; }
 
+    /// <summary>
+    /// The names of the types a nested contract is declared in, outermost first, each followed by
+    /// an underscore; empty for a top-level contract. It keeps the generated type names and the
+    /// hint name unique when two nested contracts in one namespace share a name.
+    /// </summary>
+    public string NestingPrefix { get; init; } = string.Empty;
+
     public required bool IsPublic { get; init; }
 
     public required EquatableArray<MethodModel> Methods { get; init; }
@@ -169,12 +176,13 @@ internal sealed record ClientModel : IEquatable<ClientModel>
     public string GeneratedNamespace =>
         string.IsNullOrEmpty(Namespace) ? "JevGen.Generated" : "JevGen.Generated." + Namespace;
 
-    public string ClientTypeName => InterfaceName + "_JevGenClient";
+    public string ClientTypeName => NestingPrefix + InterfaceName + "_JevGenClient";
 
-    public string SchemaTypeName => InterfaceName + "_JevGenSchema";
+    public string SchemaTypeName => NestingPrefix + InterfaceName + "_JevGenSchema";
 
-    public string RegistrationTypeName => InterfaceName + "_JevGenRegistration";
+    public string RegistrationTypeName => NestingPrefix + InterfaceName + "_JevGenRegistration";
 
     public string HintName =>
-        (string.IsNullOrEmpty(Namespace) ? InterfaceName : Namespace + "." + InterfaceName) + ".JevGen.g.cs";
+        (string.IsNullOrEmpty(Namespace) ? string.Empty : Namespace + ".")
+        + NestingPrefix.Replace('_', '.') + InterfaceName + ".JevGen.g.cs";
 }

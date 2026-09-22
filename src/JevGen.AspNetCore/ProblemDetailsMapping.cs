@@ -47,6 +47,11 @@ public static class JevProblemDetails
         {
             problem.Extensions["retryAfterSeconds"] = (int)Math.Ceiling(retryAfter.TotalSeconds);
         }
+        else if (exception is EvaluationCircuitOpenException { OpenUntil: { } openUntil })
+        {
+            var wait = openUntil - DateTimeOffset.UtcNow;
+            problem.Extensions["retryAfterSeconds"] = wait > TimeSpan.Zero ? (int)Math.Ceiling(wait.TotalSeconds) : 0;
+        }
 
         return problem;
     }
@@ -55,6 +60,7 @@ public static class JevProblemDetails
     {
         EvaluationRateLimitException => (StatusCodes.Status429TooManyRequests, "The AI provider rate limit was exceeded."),
         EvaluationTimeoutException => (StatusCodes.Status504GatewayTimeout, "The AI evaluation timed out."),
+        EvaluationCircuitOpenException => (StatusCodes.Status503ServiceUnavailable, "The AI provider is temporarily unavailable."),
 
         // A credential problem is this service's misconfiguration, not the caller's fault.
         EvaluationAuthenticationException => (StatusCodes.Status503ServiceUnavailable, "The AI provider is not correctly configured."),

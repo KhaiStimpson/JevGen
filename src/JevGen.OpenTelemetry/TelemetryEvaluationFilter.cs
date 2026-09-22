@@ -88,9 +88,13 @@ public sealed class TelemetryEvaluationFilter(
         JevGenTelemetry.Requests.Add(1, tags);
         JevGenTelemetry.QuestionCount.Record(request.Questions.Length, tags);
 
-        if (context.Attempt > 1)
+        // Telemetry runs outermost, once per provider the runtime tries, so an attempt number
+        // above one on entry means earlier providers were tried: a fallback. Retries happen
+        // further in, and show up as the attempt number moving while the call is in flight.
+        var firstAttempt = context.Attempt;
+
+        if (firstAttempt > 1)
         {
-            JevGenTelemetry.Retries.Add(1, tags);
             JevGenTelemetry.Fallbacks.Add(1, tags);
 
             using var fallback = JevGenTelemetry.ActivitySource.StartActivity(
@@ -162,6 +166,13 @@ public sealed class TelemetryEvaluationFilter(
                 context.Provider.Name);
 
             throw;
+        }
+        finally
+        {
+            if (context.Attempt > firstAttempt)
+            {
+                JevGenTelemetry.Retries.Add(context.Attempt - firstAttempt, tags);
+            }
         }
     }
 

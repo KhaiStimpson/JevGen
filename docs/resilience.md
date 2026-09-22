@@ -65,8 +65,13 @@ A provider that reports `Retry-After` wins over the curve: it knows better than 
 ## Circuit breaker
 
 After `CircuitBreakerThreshold` consecutive failures, a provider's circuit opens for
-`CircuitBreakerDuration` and further calls fail fast. One request is then let through to probe
-recovery; success closes the circuit.
+`CircuitBreakerDuration` and further calls fail fast with `EvaluationCircuitOpenException`, which
+the runtime treats as a reason to fall back to the next provider. Exactly one request is then let
+through to probe recovery while concurrent callers keep failing fast; success closes the circuit,
+failure keeps it open for another `CircuitBreakerDuration`.
+
+Calling `AddResilience` more than once only changes the settings; the filter is registered once,
+so retries never nest.
 
 Breaking per provider rather than globally means one failing host does not stop a healthy
 fallback from being used.
